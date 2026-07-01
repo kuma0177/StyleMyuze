@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "290999065880",
+    "project_id": "myuze-e3c3b",
+    "storage_bucket": "myuze-e3c3b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:290999065880:android:1b1ea1ca6e96cf5eaed26d",
+        "android_client_info": {
+          "package_name": "com.myuze"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "290999065880-vsjasqdug12e1fsm67nbe1bqmh9r4lvm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.myuze",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "290999065880-l4quloums7on3u5dluthv847jt0eh0cc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_aWe4C283JzBHu9pqD-IAMF8v738emZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "290999065880-l4quloums7on3u5dluthv847jt0eh0cc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "290999065880-4vlrrp52lcvneja6vjms96ns50pcncea.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.reactjs.native.example.Myuze"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
