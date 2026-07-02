@@ -66,6 +66,9 @@ yarn-error.log
 # testing
 /coverage
 
+# PRD (business doc — keep out of the public repo)
+Myuze PRD - Piyush .pdf
+
 # Yarn
 .yarn/*
 !.yarn/patches
