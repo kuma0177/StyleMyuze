@@ -1,11 +1,24 @@
-import React, { useMemo, useState } from 'react';
-import Logo from './assets/icons/Logo';
+import React, { useState } from 'react';
 import './styles/global.css';
+import myuzeLogo from './assets/myuze-assets/myuze-logo-full.svg';
+import waitlistHero from './assets/myuze-assets/waitlist-hero-fashion.png';
+import female1 from './assets/myuze-assets/female-1.png';
+import female2 from './assets/myuze-assets/female-2.png';
+import female3 from './assets/myuze-assets/female-3.png';
+import female4 from './assets/myuze-assets/female-4.png';
+import female5 from './assets/myuze-assets/female-5.png';
+import female6 from './assets/myuze-assets/female-6.png';
+import male1 from './assets/myuze-assets/male-1.png';
+import male2 from './assets/myuze-assets/male-2.png';
+import male3 from './assets/myuze-assets/male-3.png';
+import male4 from './assets/myuze-assets/male-4.png';
+import male5 from './assets/myuze-assets/male-5.png';
+import male6 from './assets/myuze-assets/male-6.png';
 
 type Tab = 'home' | 'discover' | 'tryon' | 'profile';
-type AuthMode = 'signin' | 'signup' | 'otp';
+type AuthMode = 'waitlist' | 'signin' | 'signup' | 'otp';
 type SetupStep = 'account' | 'style' | 'done';
-type Modal = 'moodboard' | 'challenge' | 'share' | 'reel' | 'poll' | 'switcher' | null;
+type Modal = 'moodboard' | 'challenge' | 'share' | 'reel' | 'poll' | 'drawer' | null;
 
 type TenantUser = {
   id: string;
@@ -62,7 +75,10 @@ type Look = {
   items: string[];
   palette: string[];
   image: string;
+  photo: string;
 };
+
+const modelPhotos = [female1, female2, female3, female4, female5, female6, male1, male2, male3, male4, male5, male6];
 
 const looks: Look[] = [
   {
@@ -74,6 +90,7 @@ const looks: Look[] = [
     items: ['Boxy white tee', 'Washed denim', 'Sage overshirt', 'Low-profile sneakers'],
     palette: ['#f7f3ea', '#95a987', '#0e1620', '#d7e9ff'],
     image: 'street',
+    photo: male1,
   },
   {
     id: 'clean-weekend',
@@ -84,6 +101,7 @@ const looks: Look[] = [
     items: ['Ribbed tank', 'Wide-leg trouser', 'Cropped jacket', 'Silver hoops'],
     palette: ['#ffffff', '#c9c2b8', '#111111', '#8aa6c9'],
     image: 'weekend',
+    photo: female1,
   },
   {
     id: 'rooftop-casual',
@@ -94,6 +112,7 @@ const looks: Look[] = [
     items: ['Textured shirt', 'Tailored pant', 'Slim belt', 'Statement watch'],
     palette: ['#e8ddd0', '#7d8d74', '#f5f5f1', '#090909'],
     image: 'rooftop',
+    photo: male3,
   },
   {
     id: 'work-ish',
@@ -104,6 +123,7 @@ const looks: Look[] = [
     items: ['Soft blazer', 'Relaxed denim', 'Cream knit', 'Loafers'],
     palette: ['#ebe5da', '#1d2939', '#bdc7c2', '#ffffff'],
     image: 'work',
+    photo: female4,
   },
 ];
 
@@ -242,24 +262,22 @@ function usePrototypeStore() {
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 function App() {
-  const { store, tenant, user, commit, updateUser } = usePrototypeStore();
-  const [authMode, setAuthMode] = useState<AuthMode>('signin');
-  const [authVerified, setAuthVerified] = useState(false);
+  const { tenant, user, updateUser } = usePrototypeStore();
+  const [authMode, setAuthMode] = useState<AuthMode>('waitlist');
+  const [sessionActive, setSessionActive] = useState(user.setupStep !== 'account');
   const [tab, setTab] = useState<Tab>('home');
   const [modal, setModal] = useState<Modal>(null);
   const [selectedLookId, setSelectedLookId] = useState('soft-street');
   const [chatInput, setChatInput] = useState('');
   const [productOpen, setProductOpen] = useState(false);
-  const [toast, setToast] = useState('Memory is saved locally per tenant and user.');
+  const [toast, setToast] = useState('');
 
-  const isSignedIn = authVerified || user.setupStep !== 'account';
+  const isSignedIn = sessionActive;
   const setupComplete = user.setupStep === 'done';
   const selectedLook = looks.find(look => look.id === selectedLookId) ?? looks[0];
 
-  const tenantUsers = useMemo(() => Object.values(tenant.users), [tenant.users]);
-
   const completeAuth = () => {
-    setAuthVerified(true);
+    setSessionActive(true);
     setToast(`Signed into ${tenant.name}. ${user.name}'s memory is isolated.`);
   };
 
@@ -285,8 +303,17 @@ function App() {
 
   const finishSetup = () => {
     updateUser(current => ({ ...current, setupStep: 'done' }));
+    setSessionActive(true);
     setTab('home');
-    setToast('Style twin created. Future chats now include profile, choices, and history.');
+    setToast('');
+  };
+
+  const logOut = () => {
+    setModal(null);
+    setTab('home');
+    setProductOpen(false);
+    setAuthMode('waitlist');
+    setSessionActive(false);
   };
 
   const openLook = (lookId: string, nextTab: Tab = 'tryon') => {
@@ -335,7 +362,7 @@ function App() {
             <AppHeader
               tenant={tenant}
               user={user}
-              onSwitch={() => setModal('switcher')}
+              onSwitch={() => setModal('drawer')}
               onNotify={() => setToast('New outfit ideas are waiting for this account.')}
             />
             <div className="screen-body">
@@ -372,13 +399,13 @@ function App() {
                 />
               ) : null}
               {tab === 'profile' && (
-                <ProfileScreen user={user} updateUser={updateUser} setTab={setTab} />
+                <ProfileScreen user={user} updateUser={updateUser} setTab={setTab} onLogout={logOut} />
               )}
             </div>
             <TabBar tab={tab} setTab={setTab} />
           </>
         )}
-        {modal === null && <Toast key={toast} message={toast} />}
+        {modal === null && isSignedIn && toast && <Toast key={toast} message={toast} />}
         {modal === 'moodboard' && (
           <MoodboardSheet
             onClose={() => setModal(null)}
@@ -425,18 +452,13 @@ function App() {
         {modal === 'poll' && (
           <PollSheet user={user} onClose={() => setModal(null)} onTry={() => openLook('soft-street')} />
         )}
-        {modal === 'switcher' && (
-          <SwitcherSheet
-            store={store}
-            activeTenantId={store.activeTenantId}
-            activeUserId={store.activeUserId}
-            users={tenantUsers}
+        {modal === 'drawer' && (
+          <DrawerSheet
+            user={user}
             onClose={() => setModal(null)}
-            onSwitch={(tenantId, userId) => {
-              commit(draft => ({ ...draft, activeTenantId: tenantId, activeUserId: userId }));
-              setModal(null);
-              setToast('Switched tenant/user. Chat and profile memory are distinct.');
-            }}
+            setTab={setTab}
+            onToast={setToast}
+            onLogout={logOut}
           />
         )}
       </section>
@@ -476,8 +498,19 @@ function StatusBar() {
 function BrandMark() {
   return (
     <div className="brand-mark">
-      <Logo width={130} height={41} />
+      <img src={myuzeLogo} alt="Myuze" />
     </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="google-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06L5.84 9.9C6.71 7.3 9.14 5.38 12 5.38z" />
+    </svg>
   );
 }
 
@@ -486,31 +519,52 @@ function AuthScreen({ mode, setMode, onContinue }: {
   setMode: (mode: AuthMode) => void;
   onContinue: () => void;
 }) {
+  if (mode === 'waitlist') {
+    return (
+      <div className="waitlist-screen">
+        <img className="waitlist-photo" src={waitlistHero} alt="" />
+        <div className="waitlist-top">
+          <img src={myuzeLogo} alt="Myuze" />
+        </div>
+        <div className="waitlist-copy">
+          <span className="coming-soon">COMING SOON</span>
+          <h1>Find your style.<br />Try it on.<br />Own it.</h1>
+          <p>Chat with an AI stylist, generate looks on your own photo, and share them before you buy.</p>
+          <input placeholder="you@email.com" aria-label="Email for waitlist" />
+          <button className="gradient-btn" data-testid="join-waitlist" onClick={() => setMode('signin')}>Join the waitlist</button>
+          <button className="waitlist-link" onClick={() => setMode('signin')}>Already invited? <strong>Sign in</strong></button>
+        </div>
+      </div>
+    );
+  }
   const isOtp = mode === 'otp';
   return (
-    <div className="auth-screen">
+    <div className="auth-screen auth-visual-screen">
+      <img className="auth-photo" src={waitlistHero} alt="" />
       <BrandMark />
-      <div className="auth-copy">
-        <h2>{isOtp ? 'Check email for code' : mode === 'signup' ? 'Create your Myuze account' : 'Find your style. Try it on. Own it.'}</h2>
-        <p>{isOtp ? 'We sent a 4-digit code to your email.' : 'Your AI stylist remembers your choices from the very first fit.'}</p>
+      <div className="auth-visual-content">
+        <div className="auth-copy">
+          <h2>{isOtp ? 'Check your email' : mode === 'signup' ? 'Enter your email' : 'Find your style with AI.'}</h2>
+          <p>{isOtp ? 'We sent a verification code to you@email.com' : mode === 'signup' ? 'Enter your email to sign up' : 'Try it on. Own it.'}</p>
+        </div>
+        {!isOtp ? (
+          <div className="auth-form">
+            <button className="outline-btn google-auth"><GoogleIcon />Log in with Google</button>
+            <div className="divider">or</div>
+            <label>Email<input placeholder="Enter email" /></label>
+            <button className="primary-btn" data-testid="continue-email" onClick={() => setMode('otp')}>Continue with email</button>
+            <button className="text-btn" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
+              {mode === 'signin' ? 'Do not have an account? Sign Up' : 'Already using Myuze? Sign In'}
+            </button>
+          </div>
+        ) : (
+          <div className="auth-form">
+            <div className="otp-row"><span>1</span><span>1</span><span>0</span><span /></div>
+            <button className="primary-btn" data-testid="verify-otp" onClick={onContinue}>Verify</button>
+            <button className="text-btn" onClick={() => setMode('signin')}>Back to sign in</button>
+          </div>
+        )}
       </div>
-      {!isOtp ? (
-        <div className="auth-form">
-          <button className="outline-btn google-auth">Continue with Google</button>
-          <div className="divider">or</div>
-          <label>Email<input placeholder="Enter email" /></label>
-          <button className="primary-btn" onClick={() => setMode('otp')}>Continue with email</button>
-          <button className="text-btn" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
-            {mode === 'signin' ? 'Do not have an account? Sign Up' : 'Already using Myuze? Sign In'}
-          </button>
-        </div>
-      ) : (
-        <div className="auth-form">
-          <div className="otp-row"><span>1</span><span>2</span><span>3</span><span>4</span></div>
-          <button className="primary-btn" onClick={onContinue}>Verify</button>
-          <button className="text-btn" onClick={() => setMode('signin')}>Back to sign in</button>
-        </div>
-      )}
     </div>
   );
 }
@@ -534,12 +588,17 @@ function SetupFlow({ user, updateUser, onDone }: {
       <div className="progress"><span style={{ width: `${((currentIndex + 1) / steps.length) * 100}%` }} /></div>
       {user.setupStep === 'account' && (
         <section className="setup-section">
-          <h2>Set up your style twin</h2>
-          <p>Upload one clear full-body photo so Myuze can personalize fit, drape, and try-on results.</p>
+          <h2>Let's get to know you</h2>
+          <p>One quick step — this powers your AI try-on.</p>
+          <label>Full Name<input placeholder="Enter full name" defaultValue={user.profile.fullName} /></label>
+          <div className="field-grid">
+            <label>Skin Tone<input defaultValue="Tan" /></label>
+            <label>Size<input defaultValue={user.profile.size} /></label>
+          </div>
           <div className="single-upload-slot">
             <FashionFigure />
-            <strong>Full body photo</strong>
-            <span>Use a bright, front-facing photo with your full outfit visible.</span>
+            <strong>Your photo (for try-on)</strong>
+            <span>Clean background, good lighting. Private and secure — never shared.</span>
             <div>
               <button className="outline-btn">Choose photo</button>
               <button className="secondary-btn">Open camera</button>
@@ -550,8 +609,8 @@ function SetupFlow({ user, updateUser, onDone }: {
       )}
       {user.setupStep === 'style' && (
         <section className="setup-section">
-          <h2>Pick your style</h2>
-          <p>Preset options adapt by profile, then get refined by chat.</p>
+          <h2>Pick a vibe <span>(optional)</span></h2>
+          <p>AI recommends styling based on your profile.</p>
           <div className="style-grid">
             {styleOptions(user.profile.gender).map(option => (
               <button
@@ -574,7 +633,7 @@ function SetupFlow({ user, updateUser, onDone }: {
           </div>
         </section>
       )}
-      <button className="primary-btn bottom-action" onClick={next}>{currentIndex === steps.length - 1 ? 'Finish' : 'Next'}</button>
+      <button className="primary-btn bottom-action" data-testid="setup-continue" onClick={next}>{currentIndex === steps.length - 1 ? 'Continue' : 'Continue'}</button>
     </div>
   );
 }
@@ -593,9 +652,9 @@ function AppHeader({ tenant, user, onSwitch, onNotify }: {
 }) {
   return (
     <header className="app-header">
-      <button className="icon-btn" onClick={onSwitch}>☰</button>
+      <button className="icon-btn" data-testid="hamburger-menu" aria-label="Open menu" onClick={onSwitch}>☰</button>
       <BrandMark />
-      <button className="icon-btn" onClick={onNotify}>⌁</button>
+      <button className="icon-btn" aria-label="Notifications" onClick={onNotify}>⌁</button>
       <button className="tenant-chip" onClick={onSwitch}>{tenant.name} · {user.name.split(' ')[0]}</button>
     </header>
   );
@@ -609,39 +668,58 @@ function HomeScreen({ user, chatInput, setChatInput, sendChat, openMoodboard, op
   openMoodboard: () => void;
   openLook: (lookId: string) => void;
 }) {
+  const isEmptyState = user.chat.length <= 1;
+
   return (
     <section className="home-screen">
       <div className="home-hero">
-        <div className="sparkle-logo">M</div>
-        <h2>Hi {user.name.split(' ')[0]}</h2>
-        <p>Ask Myuze for outfit ideas, product matches, try-ons, and friend polls.</p>
+        <div className="sparkle-logo"><img src={myuzeLogo} alt="Myuze" /></div>
+        <h2>Hi there 👋</h2>
+        <p>Ask Myuze for outfit ideas — I'll get to know your style as we chat.</p>
       </div>
       <div className="quick-grid">
-        {['Outfit for a date', 'Summer styles', 'Try on this shirt', 'Poll my friends'].map(prompt => (
-          <button key={prompt} onClick={() => prompt === 'Try on this shirt' ? openMoodboard() : sendChat(prompt)}>{prompt}</button>
+        {['Style me for a first date', "What's trending this week?", 'Pack for a beach trip'].map(prompt => (
+          <button key={prompt} onClick={() => sendChat(prompt)}>{prompt}</button>
         ))}
       </div>
-      <div className="chat-list">
-        {user.chat.map(message => (
-          <article className={`chat-bubble ${message.role}`} key={message.id}>
-            <p>{message.text}</p>
-            {message.lookIds && (
-              <div className="mini-look-row">
-                {message.lookIds.map(id => {
-                  const look = looks.find(item => item.id === id)!;
-                  return (
-                    <button key={id} onClick={() => openLook(id)}>
-                      <FashionTile variant={look.image} />
-                      <span>{look.title}</span>
-                      <strong>Try Now</strong>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </article>
-        ))}
-      </div>
+      {isEmptyState ? (
+        <section className="trending-looks" aria-label="Trending looks">
+          <div className="section-row">
+            <h3>Trending looks</h3>
+            <button type="button">See all</button>
+          </div>
+          <div className="trending-row">
+            {looks.map(look => (
+              <button className="trending-card" key={look.id} onClick={() => openLook(look.id)}>
+                <FashionTile variant={look.image} />
+                <strong>Try Now</strong>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <div className="chat-list">
+          {user.chat.map(message => (
+            <article className={`chat-bubble ${message.role}`} key={message.id}>
+              <p>{message.text}</p>
+              {message.lookIds && (
+                <div className="mini-look-row">
+                  {message.lookIds.map(id => {
+                    const look = looks.find(item => item.id === id)!;
+                    return (
+                      <button key={id} onClick={() => openLook(id)}>
+                        <FashionTile variant={look.image} />
+                        <span>{look.title}</span>
+                        <strong>Try Now</strong>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
       <Composer value={chatInput} setValue={setChatInput} onSend={() => sendChat()} onPlus={openMoodboard} />
     </section>
   );
@@ -656,7 +734,7 @@ function DiscoverScreen({ openLook, openProduct }: {
     <section className="discover-screen">
       <div className="search-row">
         <button className="filter-btn">≋</button>
-        <input placeholder="Search looks, brands, people" />
+        <input placeholder="Search" />
         <button className="filter-btn">⌕</button>
       </div>
       <div className="segments">
@@ -665,7 +743,7 @@ function DiscoverScreen({ openLook, openProduct }: {
       <div className={segment === 'Following' ? 'following-feed' : 'discover-grid'}>
         {looks.concat(looks.slice(0, 2)).map((look, index) => segment === 'Following' ? (
           <article className="following-card" key={`${look.id}-${index}`}>
-            <Avatar name={['Kellyyy_33', 'Stevee_', 'Mari_e_1'][index % 3]} />
+            <Avatar name={['Kellyyy_33', 'Stevee_', 'Mari_e_1'][index % 3]} index={index} />
             <div>
               <strong>{look.title}</strong>
               <p>{look.vibe}</p>
@@ -693,12 +771,12 @@ function ProductDetail({ look, onTry }: { look: Look; onTry: () => void }) {
     <section className="product-screen">
       <FashionHero look={look} />
       <div className="thumbnail-row">{looks.map(item => <button key={item.id}><FashionTile variant={item.image} /></button>)}</div>
-      <h2>Men's Oversized Cotton Shirt</h2>
-      <h3>USD {look.price.replace('-ish', '')}</h3>
-      <p><strong>Type:</strong> Cotton blend</p>
+      <h2>Men's Oversized Cotton Crewneck Tee</h2>
+      <h3>USD $39.99</h3>
+      <p><strong>Type:</strong> Cotton</p>
       <div className="swatches">{look.palette.map(color => <span style={{ background: color }} key={color} />)}</div>
-      <button className="primary-btn" onClick={onTry}>Try Now</button>
-      <button className="secondary-btn">Shop Now</button>
+      <button className="soft-banner" onClick={onTry}>✦ Try On Look</button>
+      <button className="primary-btn">Shop Now</button>
     </section>
   );
 }
@@ -720,15 +798,12 @@ function TryOnScreen({ look, historyIds, openLook, onChallenge, onShare, onReel,
       </div>
       <div className="tryon-card">
         <FashionHero look={look} />
-        <button className="reaction no">No</button>
-        <button className="reaction yes">Yes</button>
       </div>
       <div className="thumbnail-row">{looks.map(item => <button onClick={() => openLook(item.id)} className={item.id === look.id ? 'active' : ''} key={item.id}><FashionTile variant={item.image} /></button>)}</div>
       <div className="action-grid">
         <button className="outline-btn" onClick={onChallenge}>Challenge</button>
-        <button className="primary-btn" onClick={saveTryOn}>Save Look</button>
         <button className="outline-btn" onClick={onReel}>Create Reel</button>
-        <button className="primary-btn">Shop Now</button>
+        <button className="primary-btn wide" onClick={saveTryOn}>Shop Now</button>
       </div>
       <h3>Try on history</h3>
       <div className="history-grid">
@@ -741,10 +816,11 @@ function TryOnScreen({ look, historyIds, openLook, onChallenge, onShare, onReel,
   );
 }
 
-function ProfileScreen({ user, updateUser, setTab }: {
+function ProfileScreen({ user, updateUser, setTab, onLogout }: {
   user: TenantUser;
   updateUser: (updater: (user: TenantUser) => TenantUser) => void;
   setTab: (tab: Tab) => void;
+  onLogout: () => void;
 }) {
   return (
     <section className="profile-screen">
@@ -754,10 +830,9 @@ function ProfileScreen({ user, updateUser, setTab }: {
       </div>
       <label>Full name<input value={user.profile.fullName} onChange={event => updateUser(current => ({ ...current, profile: { ...current.profile, fullName: event.target.value } }))} /></label>
       <label>Email<input value={user.email} readOnly /></label>
-      {['Body Measurements', 'Fit Preferences', 'Security Settings'].map(item => <button className="settings-row" key={item}>{item}<span>›</span></button>)}
+      {['Fit Preferences', 'Privacy Policy', 'Help & Support'].map(item => <button className="settings-row" key={item}>{item}<span>›</span></button>)}
       <button className="settings-row" onClick={() => setTab('tryon')}>Try On History<span>›</span></button>
-      {['Privacy Policy', 'Help & Support'].map(item => <button className="settings-row" key={item}>{item}<span>›</span></button>)}
-      <button className="logout-btn">Log Out</button>
+      <button className="logout-btn" onClick={onLogout}>Log Out</button>
     </section>
   );
 }
@@ -803,10 +878,10 @@ function ChallengeSheet({ onClose, onPoll, onShare }: { onClose: () => void; onP
 
 function ShareSheet({ look, onClose, onCopy }: { look: Look; onClose: () => void; onCopy: () => void }) {
   return (
-    <BottomSheet title="Share your look" onClose={onClose}>
+    <BottomSheet title="Share" onClose={onClose}>
       <div className="share-preview"><FashionTile variant={look.image} /><div><strong>{look.title}</strong><span>Made with Myuze</span></div></div>
       <div className="share-icons">
-        {['Copy', 'Message', 'Mail', 'More', 'Save', 'Image', 'QR', 'Link'].map(item => <button onClick={item === 'Copy' ? onCopy : undefined} key={item}>{item}</button>)}
+        {['Save', 'FB', 'IG', 'WA', 'Snap', 'Pin', 'More'].map(item => <button onClick={item === 'More' ? onCopy : undefined} key={item}>{item}</button>)}
       </div>
     </BottomSheet>
   );
@@ -851,29 +926,41 @@ function PollSheet({ user, onClose, onTry }: { user: TenantUser; onClose: () => 
   );
 }
 
-function SwitcherSheet({ store, activeTenantId, activeUserId, users, onSwitch, onClose }: {
-  store: PrototypeStore;
-  activeTenantId: string;
-  activeUserId: string;
-  users: TenantUser[];
-  onSwitch: (tenantId: string, userId: string) => void;
+function DrawerSheet({ user, onClose, setTab, onToast, onLogout }: {
+  user: TenantUser;
   onClose: () => void;
+  setTab: (tab: Tab) => void;
+  onToast: (message: string) => void;
+  onLogout: () => void;
 }) {
+  const openTryOnHistory = () => {
+    setTab('tryon');
+    onClose();
+    onToast('Opened Try-on History.');
+  };
+
   return (
-    <BottomSheet title="Tenant and user memory" onClose={onClose}>
-      {Object.values(store.tenants).map(tenant => (
-        <div className="tenant-block" key={tenant.id}>
-          <h3>{tenant.name}</h3>
-          {Object.values(tenant.users).map(user => (
-            <button className={(tenant.id === activeTenantId && user.id === activeUserId) ? 'memory-row active' : 'memory-row'} onClick={() => onSwitch(tenant.id, user.id)} key={user.id}>
-              <Avatar name={user.name} />
-              <span><strong>{user.name}</strong><small>{user.chat.length} chat memories · {user.profile.styles.join(', ')}</small></span>
-            </button>
-          ))}
+    <div className="drawer-scrim" data-testid="drawer-scrim" onClick={onClose}>
+      <aside className="drawer-panel" aria-label="Myuze menu" onClick={event => event.stopPropagation()}>
+        <div className="drawer-profile">
+          <Avatar name={user.name} index={0} />
+          <span>
+            <strong>{user.name}</strong>
+            <button onClick={() => {
+              setTab('profile');
+              onClose();
+            }}>Edit Profile</button>
+          </span>
         </div>
-      ))}
-      <p className="privacy-note">Active users in this tenant: {users.length}. Backend should enforce tenant-scoped reads and writes.</p>
-    </BottomSheet>
+        <nav className="drawer-nav">
+          <button onClick={() => onToast('Fit Preferences will open in the full account flow.')}>♡ <span>Fit Preferences</span><b>›</b></button>
+          <button onClick={openTryOnHistory}>◷ <span>Try-on History</span><b>›</b></button>
+          <button onClick={() => onToast('Privacy Policy will open in the full account flow.')}>◇ <span>Privacy Policy</span><b>›</b></button>
+          <button onClick={() => onToast('Help & Support will open in the full account flow.')}>? <span>Help & Support</span><b>›</b></button>
+        </nav>
+        <button className="drawer-logout" data-testid="drawer-logout" onClick={onLogout}>↪ <span>Log Out</span></button>
+      </aside>
+    </div>
   );
 }
 
@@ -890,10 +977,19 @@ function BottomSheet({ title, children, onClose }: { title: string; children: Re
 }
 
 function TabBar({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
-  const tabs: Array<[Tab, string, string]> = [['home', '⌂', 'Home'], ['tryon', '✦', 'Try On'], ['discover', '◇', 'Discover'], ['profile', '◎', 'Profile']];
+  const tabs: Array<[Tab, string, string]> = [['home', '⌂', 'Home'], ['tryon', '✦', 'Try On'], ['discover', '◇', 'Discover']];
   return (
     <nav className="tab-bar">
-      {tabs.map(([id, icon, label]) => <button className={tab === id ? 'active' : ''} onClick={() => setTab(id)} key={id}><span>{icon}</span>{label}</button>)}
+      {tabs.map(([id, icon, label]) => (
+        <button
+          className={tab === id ? 'active' : ''}
+          data-testid={`tab-${id}`}
+          onClick={() => setTab(id)}
+          key={id}
+        >
+          <span>{icon}</span>{label}
+        </button>
+      ))}
     </nav>
   );
 }
@@ -921,16 +1017,37 @@ function Toast({ message }: { message: string }) {
 function FashionHero({ look }: { look: Look }) {
   return (
     <div className={`fashion-hero ${look.image}`}>
-      <FashionFigure />
+      <img src={look.photo} alt="" />
       <div className="hero-caption"><strong>{look.title}</strong><span>{look.vibe}</span></div>
     </div>
   );
 }
 
 function FashionTile({ variant }: { variant: string }) {
+  const normalized = variant.toLowerCase().replace(/\s+/g, '-');
+  const indexByVariant: Record<string, number> = {
+    street: 6,
+    streetwear: 6,
+    weekend: 0,
+    casual: 1,
+    'clean-weekend': 1,
+    rooftop: 8,
+    'rooftop-casual': 8,
+    work: 3,
+    office: 4,
+    'business-casual': 9,
+    minimal: 2,
+    'soft-minimal': 2,
+    vintage: 5,
+    bohemian: 5,
+    athleisure: 10,
+    y2k: 11,
+    sage: 7,
+  };
+  const photo = modelPhotos[indexByVariant[normalized] ?? 0];
   return (
-    <div className={`fashion-tile ${variant.toLowerCase().replace(/\s+/g, '-')}`}>
-      <FashionFigure mini />
+    <div className={`fashion-tile ${normalized}`}>
+      <img src={photo} alt="" />
     </div>
   );
 }
@@ -946,8 +1063,8 @@ function FashionFigure({ mini = false }: { mini?: boolean }) {
   );
 }
 
-function Avatar({ name }: { name: string }) {
-  return <span className="avatar">{name.slice(0, 1).toUpperCase()}</span>;
+function Avatar({ name, index = 0 }: { name: string; index?: number }) {
+  return <span className="avatar"><img src={modelPhotos[index % modelPhotos.length]} alt="" /><b>{name.slice(0, 1).toUpperCase()}</b></span>;
 }
 
 export default App;
