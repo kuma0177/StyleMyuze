@@ -332,20 +332,21 @@ p { color: #6f7780; line-height: 1.45; }
 
 .style-card {
   padding: 10px;
-  border: 1px solid #edf0f5;
+  border: 1px solid transparent;
   border-radius: 18px;
-  background: #fff;
+  background: transparent;
   display: grid;
   gap: 8px;
   color: #68717b;
   font-weight: 800;
-  box-shadow: 0 12px 28px rgba(12, 24, 38, .06);
+  box-shadow: none;
+  position: relative;
 }
 
 .style-card.selected {
-  color: #06272e;
-  border-color: #030303;
-  box-shadow: 0 0 0 2px #030303 inset;
+  color: var(--blue);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .influencer-row, .memory-row, .settings-row {
@@ -448,6 +449,10 @@ p { color: #6f7780; line-height: 1.45; }
   gap: 16px;
 }
 
+.home-screen {
+  padding-bottom: 108px;
+}
+
 .home-hero {
   text-align: center;
   display: grid;
@@ -530,7 +535,8 @@ p { color: #6f7780; line-height: 1.45; }
   position: absolute;
   left: 22px;
   right: 22px;
-  bottom: 78px;
+  bottom: 110px;
+  z-index: 14;
   height: 54px;
   display: grid;
   grid-template-columns: 42px 1fr 44px;
@@ -1355,7 +1361,6 @@ select:focus {
   font-family: "Space Grotesk", Inter, sans-serif;
 }
 
-.style-card,
 .following-card,
 .settings-row,
 .profile-card,
@@ -1367,9 +1372,9 @@ select:focus {
 }
 
 .style-card.selected {
-  border-color: var(--blue);
-  color: var(--ink);
-  box-shadow: 0 0 0 2px var(--blue) inset;
+  border-color: transparent;
+  color: var(--blue);
+  box-shadow: none;
 }
 
 .app-header {
@@ -1441,7 +1446,7 @@ select:focus {
 }
 
 .composer {
-  bottom: 84px;
+  bottom: 110px;
   border: 1.5px solid var(--border);
   background: #fff;
   box-shadow: var(--shadow-md);
@@ -1491,6 +1496,19 @@ select:focus {
 .fashion-tile img {
   mix-blend-mode: multiply;
   opacity: .72;
+}
+
+.style-card .fashion-tile.preference-tile {
+  background: transparent;
+  overflow: visible;
+}
+
+.style-card .fashion-tile.preference-tile img {
+  object-fit: contain;
+  object-position: center bottom;
+  mix-blend-mode: normal;
+  opacity: 1;
+  padding: 4px;
 }
 
 .hero-caption {
@@ -2237,7 +2255,7 @@ textarea:focus {
 .composer {
   left: 20px;
   right: 20px;
-  bottom: 60px;
+  bottom: 110px;
   height: 54px;
   background: #fff;
   border: 1.5px solid var(--border);
@@ -2703,4 +2721,437 @@ textarea:focus {
 .auth-visual-screen .text-btn {
   color: #fff;
   text-shadow: 0 5px 18px rgba(0,0,0,.38);
+}
+
+/* Functional profile/settings views. */
+.profile-card.compact {
+  border-radius: 16px;
+}
+
+.profile-card button {
+  width: max-content;
+  padding: 0;
+  background: transparent;
+  color: var(--blue);
+  font-weight: 900;
+  text-align: left;
+}
+
+.profile-subheader {
+  display: grid;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-subheader button {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.profile-subheader h2 {
+  text-align: center;
+}
+
+.profile-screen .settings-row {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  text-align: left;
+  font-size: 15px;
+}
+
+.profile-screen .settings-row span {
+  color: var(--ink);
+}
+
+.profile-screen .settings-row b {
+  color: var(--text-muted);
+  font-size: 22px;
+}
+
+.preference-summary,
+.info-panel {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.preference-summary span,
+.info-panel p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.profile-screen .gender-options button {
+  min-height: 38px;
+}
+
+.profile-screen select {
+  height: 44px;
+}
+
+.preference-style-grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.preference-style-grid .style-card {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.preference-style-grid .fashion-tile {
+  height: 168px;
+  min-height: 168px;
+}
+
+.profile-history-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-history-grid button {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+}
+
+.profile-history-grid .fashion-tile {
+  height: 86px;
+  min-height: 86px;
+}
+
+.profile-history-grid span {
+  display: grid;
+  gap: 4px;
+}
+
+.profile-history-grid small {
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+/* Onboarding handoff: account setup + gender-aware preset style cards. */
+.setup-screen {
+  background: #fff;
+  padding: 14px 18px 22px;
+  gap: 13px;
+}
+
+.setup-topbar {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: center;
+  min-height: 34px;
+}
+
+.setup-topbar .brand-mark {
+  width: 84px;
+  min-height: 28px;
+  justify-self: center;
+}
+
+.setup-topbar .brand-mark img {
+  width: 84px;
+}
+
+.setup-back {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: #111;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.setup-progress-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+}
+
+.setup-progress-row span {
+  height: 5px;
+  border-radius: 999px;
+  background: #d6d6d6;
+}
+
+.setup-progress-row span.active {
+  background: #000;
+}
+
+.setup-progress-row strong {
+  margin-left: 5px;
+  color: #000;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.setup-heading {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
+}
+
+.setup-heading h2 {
+  color: #000;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.setup-heading p {
+  color: #707070;
+  font-size: 9.5px;
+  line-height: 1.25;
+}
+
+.setup-screen .setup-section {
+  gap: 9px;
+}
+
+.setup-screen label,
+.setup-control-group > span,
+.profile-upload-card > strong {
+  gap: 7px;
+  color: #111;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.setup-screen input,
+.setup-screen select {
+  height: 36px;
+  border: 1px solid #d7d7d7;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 0 13px;
+  box-shadow: none;
+}
+
+.setup-screen select {
+  appearance: auto;
+}
+
+.setup-control-group {
+  display: grid;
+  gap: 7px;
+}
+
+.gender-options {
+  display: flex;
+  gap: 10px;
+}
+
+.gender-options button {
+  min-width: 78px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #d6d6d6;
+  border-radius: 9px;
+  background: #fff;
+  color: #111;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.gender-options button i {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #111;
+  border-radius: 999px;
+}
+
+.gender-options button.active {
+  border-color: #000;
+}
+
+.gender-options button.active i {
+  box-shadow: inset 0 0 0 3px #fff;
+  background: #000;
+}
+
+.setup-helper {
+  color: #777;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.profile-upload-card {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-upload-box {
+  min-height: 176px;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  border: 1.5px solid #111;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.profile-upload-box .figure {
+  width: 92px;
+  height: 132px;
+  margin: 0;
+  filter: none;
+}
+
+.profile-upload-box .head {
+  width: 21px;
+  height: 21px;
+  background: #fff;
+  border: 1.6px solid #111;
+}
+
+.profile-upload-box .body {
+  top: 25px;
+  width: 45px;
+  height: 58px;
+  border: 1.6px solid #111;
+  border-radius: 28px 28px 18px 18px;
+  background: #fff;
+}
+
+.profile-upload-box .leg {
+  top: 76px;
+  width: 17px;
+  height: 50px;
+  border: 1.6px solid #111;
+  background: #fff;
+}
+
+.profile-upload-box .leg.left { margin-left: -12px; }
+.profile-upload-box .leg.right { margin-left: 12px; }
+
+.upload-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: -6px;
+}
+
+.upload-actions button {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #f2f2f2;
+  color: #777;
+  font-size: 12px;
+}
+
+.setup-guidance {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.setup-guidance li {
+  position: relative;
+  padding-left: 22px;
+  color: #6f6f6f;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+
+.setup-guidance li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #111;
+  border-radius: 999px;
+  color: #111;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.setup-screen .style-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  padding-top: 8px;
+}
+
+.setup-screen .style-card {
+  gap: 8px;
+  padding: 0;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #111;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.setup-screen .style-card.selected {
+  border-color: transparent;
+  color: var(--blue);
+  box-shadow: none;
+}
+
+.setup-screen .style-card .fashion-tile {
+  height: 150px;
+  min-height: 150px;
+  border-radius: 8px;
+}
+
+.setup-screen .style-card span {
+  text-align: center;
+}
+
+.setup-next {
+  min-height: 40px;
+  border-radius: 7px;
+  background: #000;
+  color: #fff;
+  box-shadow: none;
 }

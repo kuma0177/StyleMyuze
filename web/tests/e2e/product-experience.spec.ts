@@ -6,17 +6,27 @@ test.describe('Myuze product experience', () => {
     await startFresh(page);
 
     await page.getByTestId('join-waitlist').click();
-    await expect(page.getByText('Find your style with AI.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Enter your email' })).toBeVisible();
 
     await page.getByPlaceholder('Enter email').fill('maya@myuze.app');
     await page.getByTestId('continue-email').click();
     await expect(page.getByText('Check your email')).toBeVisible();
 
     await page.getByTestId('verify-otp').click();
-    await expect(page.getByText("Let's get to know you")).toBeVisible();
+    await expect(page.getByText('Set up your account')).toBeVisible();
+    await expect(page.getByText('Gender')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Female', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Male', exact: true }).click();
 
     await page.getByTestId('setup-continue').click();
-    await expect(page.getByText('Pick a vibe')).toBeVisible();
+    await expect(page.getByText('Pick Your Style')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Streetwear', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Casual', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Workwear', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Business Casual', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Classic', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Minimal', exact: true })).toBeVisible();
+    await expect(page.getByText('Bohemian')).toHaveCount(0);
 
     await page.getByTestId('setup-continue').click();
     await expect(page.getByText('Hi there')).toBeVisible();
@@ -58,7 +68,14 @@ test.describe('Myuze product experience', () => {
     await expect(page.getByText('Help & Support')).toBeVisible();
     await expectNoDebugTenantMenu(page);
 
-    await page.getByTestId('drawer-logout').click();
+    await page.getByTestId('drawer-fit-preferences').click();
+    await expect(page.getByRole('heading', { name: 'Fit Preferences' })).toBeVisible();
+    await page.getByRole('button', { name: 'Male', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Workwear', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Classic', exact: true }).click();
+    await page.getByRole('button', { name: 'Save preferences' }).click();
+    await expect(page.getByTestId('fit-preferences-row')).toBeVisible();
+    await page.getByRole('button', { name: 'Log Out' }).click();
     await expect(page.getByText('Find your style.')).toBeVisible();
     await expect(page.getByTestId('join-waitlist')).toBeVisible();
   });

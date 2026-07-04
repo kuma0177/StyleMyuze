@@ -14,11 +14,24 @@ import male3 from './assets/myuze-assets/male-3.png';
 import male4 from './assets/myuze-assets/male-4.png';
 import male5 from './assets/myuze-assets/male-5.png';
 import male6 from './assets/myuze-assets/male-6.png';
+import styleFemaleAthleisure from './assets/myuze-assets/style-female-athleisure.jpg';
+import styleFemaleBohemian from './assets/myuze-assets/style-female-bohemian.jpg';
+import styleFemaleCasual from './assets/myuze-assets/style-female-casual.jpg';
+import styleFemaleMinimal from './assets/myuze-assets/style-female-minimal.jpg';
+import styleFemaleOffice from './assets/myuze-assets/style-female-office.jpg';
+import styleFemaleVintage from './assets/myuze-assets/style-female-vintage.jpg';
+import styleMaleBusinessCasual from './assets/myuze-assets/style-male-business-casual.jpg';
+import styleMaleCasual from './assets/myuze-assets/style-male-casual.jpg';
+import styleMaleClassic from './assets/myuze-assets/style-male-classic.jpg';
+import styleMaleMinimal from './assets/myuze-assets/style-male-minimal.jpg';
+import styleMaleStreetwear from './assets/myuze-assets/style-male-streetwear.jpg';
+import styleMaleWorkwear from './assets/myuze-assets/style-male-workwear.jpg';
 
 type Tab = 'home' | 'discover' | 'tryon' | 'profile';
 type AuthMode = 'waitlist' | 'signin' | 'signup' | 'otp';
 type SetupStep = 'account' | 'style' | 'done';
 type Modal = 'moodboard' | 'challenge' | 'share' | 'reel' | 'poll' | 'drawer' | null;
+type ProfileView = 'menu' | 'edit' | 'fit' | 'history' | 'privacy' | 'help';
 
 type TenantUser = {
   id: string;
@@ -79,6 +92,21 @@ type Look = {
 };
 
 const modelPhotos = [female1, female2, female3, female4, female5, female6, male1, male2, male3, male4, male5, male6];
+
+const styleThumbnails: Record<string, string> = {
+  'female-minimal': styleFemaleMinimal,
+  'female-casual': styleFemaleCasual,
+  'female-office': styleFemaleOffice,
+  'female-vintage': styleFemaleVintage,
+  'female-athleisure': styleFemaleAthleisure,
+  'female-bohemian': styleFemaleBohemian,
+  'male-streetwear': styleMaleStreetwear,
+  'male-casual': styleMaleCasual,
+  'male-workwear': styleMaleWorkwear,
+  'male-business-casual': styleMaleBusinessCasual,
+  'male-classic': styleMaleClassic,
+  'male-minimal': styleMaleMinimal,
+};
 
 const looks: Look[] = [
   {
@@ -264,6 +292,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 function App() {
   const { tenant, user, updateUser } = usePrototypeStore();
   const [authMode, setAuthMode] = useState<AuthMode>('waitlist');
+  const [authIntent, setAuthIntent] = useState<'signin' | 'signup'>('signin');
   const [sessionActive, setSessionActive] = useState(user.setupStep !== 'account');
   const [tab, setTab] = useState<Tab>('home');
   const [modal, setModal] = useState<Modal>(null);
@@ -271,14 +300,30 @@ function App() {
   const [chatInput, setChatInput] = useState('');
   const [productOpen, setProductOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const [profileView, setProfileView] = useState<ProfileView>('menu');
 
   const isSignedIn = sessionActive;
   const setupComplete = user.setupStep === 'done';
   const selectedLook = looks.find(look => look.id === selectedLookId) ?? looks[0];
 
+  const setAuthFlow = (mode: AuthMode) => {
+    if (mode === 'signin' || mode === 'signup') setAuthIntent(mode);
+    setAuthMode(mode);
+  };
+
   const completeAuth = () => {
+    if (authIntent === 'signup') {
+      updateUser(current => ({
+        ...current,
+        setupStep: 'account',
+        profile: {
+          ...current.profile,
+          styles: styleOptions(current.profile.gender).slice(0, 1),
+        },
+      }));
+    }
     setSessionActive(true);
-    setToast(`Signed into ${tenant.name}. ${user.name}'s memory is isolated.`);
+    setToast('');
   };
 
   const sendChat = (text = chatInput) => {
@@ -311,8 +356,10 @@ function App() {
   const logOut = () => {
     setModal(null);
     setTab('home');
+    setProfileView('menu');
     setProductOpen(false);
     setAuthMode('waitlist');
+    setAuthIntent('signin');
     setSessionActive(false);
   };
 
@@ -354,7 +401,7 @@ function App() {
       <section className="phone-shell" aria-label="Myuze interactive PWA prototype">
         <StatusBar />
         {!isSignedIn ? (
-          <AuthScreen mode={authMode} setMode={setAuthMode} onContinue={completeAuth} />
+          <AuthScreen mode={authMode} setMode={setAuthFlow} onContinue={completeAuth} />
         ) : !setupComplete ? (
           <SetupFlow user={user} updateUser={updateUser} onDone={finishSetup} />
         ) : (
@@ -399,7 +446,15 @@ function App() {
                 />
               ) : null}
               {tab === 'profile' && (
-                <ProfileScreen user={user} updateUser={updateUser} setTab={setTab} onLogout={logOut} />
+                <ProfileScreen
+                  user={user}
+                  view={profileView}
+                  setView={setProfileView}
+                  updateUser={updateUser}
+                  setTab={setTab}
+                  openLook={openLook}
+                  onLogout={logOut}
+                />
               )}
             </div>
             <TabBar tab={tab} setTab={setTab} />
@@ -457,7 +512,7 @@ function App() {
             user={user}
             onClose={() => setModal(null)}
             setTab={setTab}
-            onToast={setToast}
+            setProfileView={setProfileView}
             onLogout={logOut}
           />
         )}
@@ -531,7 +586,7 @@ function AuthScreen({ mode, setMode, onContinue }: {
           <h1>Find your style.<br />Try it on.<br />Own it.</h1>
           <p>Chat with an AI stylist, generate looks on your own photo, and share them before you buy.</p>
           <input placeholder="you@email.com" aria-label="Email for waitlist" />
-          <button className="gradient-btn" data-testid="join-waitlist" onClick={() => setMode('signin')}>Join the waitlist</button>
+          <button className="gradient-btn" data-testid="join-waitlist" onClick={() => setMode('signup')}>Join the waitlist</button>
           <button className="waitlist-link" onClick={() => setMode('signin')}>Already invited? <strong>Sign in</strong></button>
         </div>
       </div>
@@ -581,36 +636,96 @@ function SetupFlow({ user, updateUser, onDone }: {
     if (nextStep) updateUser(current => ({ ...current, setupStep: nextStep }));
     else onDone();
   };
+  const progress = `${currentIndex + 1}/2`;
 
   return (
     <div className="setup-screen">
-      <BrandMark />
-      <div className="progress"><span style={{ width: `${((currentIndex + 1) / steps.length) * 100}%` }} /></div>
+      <div className="setup-topbar">
+        <button className="setup-back" type="button" aria-label="Back">‹</button>
+        <BrandMark />
+      </div>
+      <div className="setup-progress-row">
+        {steps.map((step, index) => (
+          <span className={index <= currentIndex ? 'active' : ''} key={step} />
+        ))}
+        <strong>{progress}</strong>
+      </div>
       {user.setupStep === 'account' && (
         <section className="setup-section">
-          <h2>Let's get to know you</h2>
-          <p>One quick step — this powers your AI try-on.</p>
-          <label>Full Name<input placeholder="Enter full name" defaultValue={user.profile.fullName} /></label>
-          <div className="field-grid">
-            <label>Skin Tone<input defaultValue="Tan" /></label>
-            <label>Size<input defaultValue={user.profile.size} /></label>
+          <div className="setup-heading">
+            <h2>Set up your account</h2>
+            <p>Please complete your try-on information</p>
           </div>
-          <div className="single-upload-slot">
-            <FashionFigure />
-            <strong>Your photo (for try-on)</strong>
-            <span>Clean background, good lighting. Private and secure — never shared.</span>
-            <div>
-              <button className="outline-btn">Choose photo</button>
-              <button className="secondary-btn">Open camera</button>
+          <label>Full Name<input placeholder="Enter Full Name" value={user.profile.fullName} onChange={event => updateUser(current => ({
+            ...current,
+            profile: { ...current.profile, fullName: event.target.value },
+          }))} /></label>
+          <div className="setup-control-group">
+            <span>Gender</span>
+            <div className="gender-options">
+              {(['Male', 'Female'] as const).map(gender => (
+                <button
+                  className={user.profile.gender === gender ? 'active' : ''}
+                  type="button"
+                  onClick={() => updateUser(current => ({
+                    ...current,
+                    profile: {
+                      ...current.profile,
+                      gender,
+                      styles: styleOptions(gender).slice(0, 1),
+                    },
+                  }))}
+                  key={gender}
+                >
+                  <i />{gender}
+                </button>
+              ))}
             </div>
           </div>
-          <p className="privacy-note">Photos stay private in this prototype. Later this maps to per-user secure object storage.</p>
+          <label>Skin Tone
+            <select value={user.profile.skinTone} onChange={event => updateUser(current => ({
+              ...current,
+              profile: { ...current.profile, skinTone: event.target.value },
+            }))}>
+              <option>Yellow</option>
+              <option>Fair</option>
+              <option>Medium</option>
+              <option>Olive</option>
+              <option>Deep</option>
+            </select>
+          </label>
+          <label>Size
+            <select value={user.profile.size} onChange={event => updateUser(current => ({
+              ...current,
+              profile: { ...current.profile, size: event.target.value },
+            }))}>
+              {['XS', 'S', 'M', 'L', 'XL'].map(size => <option key={size}>{size}</option>)}
+            </select>
+          </label>
+          <p className="setup-helper">Share your usual size to help us suggest the best fit</p>
+          <div className="profile-upload-card">
+            <strong>Profile Photo</strong>
+            <div className="profile-upload-box">
+              <FashionFigure />
+              <div className="upload-actions">
+                <button type="button" aria-label="Upload photo">⊕</button>
+                <button type="button" aria-label="Open camera">⌾</button>
+              </div>
+            </div>
+          </div>
+          <ul className="setup-guidance">
+            <li>Please keep the shooting environment clean and lighting appropriate for best fitting effect.</li>
+            <li>Please wear fitted clothes and keep your hands out of your pockets.</li>
+            <li>Your photo stays private and securely stored — never shared!</li>
+          </ul>
         </section>
       )}
       {user.setupStep === 'style' && (
         <section className="setup-section">
-          <h2>Pick a vibe <span>(optional)</span></h2>
-          <p>AI recommends styling based on your profile.</p>
+          <div className="setup-heading">
+            <h2>Pick Your Style</h2>
+            <p>AI recommends styling based on your profile</p>
+          </div>
           <div className="style-grid">
             {styleOptions(user.profile.gender).map(option => (
               <button
@@ -626,14 +741,14 @@ function SetupFlow({ user, updateUser, onDone }: {
                 }))}
                 key={option}
               >
-                <FashionTile variant={option} />
+                <FashionTile variant={`${user.profile.gender}-${option}`} />
                 <span>{option}</span>
               </button>
             ))}
           </div>
         </section>
       )}
-      <button className="primary-btn bottom-action" data-testid="setup-continue" onClick={next}>{currentIndex === steps.length - 1 ? 'Continue' : 'Continue'}</button>
+      <button className="primary-btn bottom-action setup-next" data-testid="setup-continue" onClick={next}>Next</button>
     </div>
   );
 }
@@ -641,7 +756,7 @@ function SetupFlow({ user, updateUser, onDone }: {
 function styleOptions(gender: 'Female' | 'Male') {
   return gender === 'Female'
     ? ['Minimal', 'Casual', 'Office', 'Vintage', 'Athleisure', 'Bohemian']
-    : ['Streetwear', 'Workwear', 'Business Casual', 'Classic', 'Minimal', 'Athleisure'];
+    : ['Streetwear', 'Casual', 'Workwear', 'Business Casual', 'Classic', 'Minimal'];
 }
 
 function AppHeader({ tenant, user, onSwitch, onNotify }: {
@@ -816,24 +931,157 @@ function TryOnScreen({ look, historyIds, openLook, onChallenge, onShare, onReel,
   );
 }
 
-function ProfileScreen({ user, updateUser, setTab, onLogout }: {
+function ProfileScreen({ user, view, setView, updateUser, setTab, openLook, onLogout }: {
   user: TenantUser;
+  view: ProfileView;
+  setView: (view: ProfileView) => void;
   updateUser: (updater: (user: TenantUser) => TenantUser) => void;
   setTab: (tab: Tab) => void;
+  openLook: (lookId: string, nextTab?: Tab) => void;
   onLogout: () => void;
 }) {
+  if (view === 'edit') {
+    return (
+      <section className="profile-screen">
+        <ProfileSubheader title="Edit Profile" onBack={() => setView('menu')} />
+        <div className="profile-card compact">
+          <Avatar name={user.name} />
+          <div><h2>{user.profile.fullName}</h2><p>{user.email}</p></div>
+        </div>
+        <label>Full name<input value={user.profile.fullName} onChange={event => updateUser(current => ({ ...current, name: event.target.value || current.name, profile: { ...current.profile, fullName: event.target.value } }))} /></label>
+        <label>Email<input value={user.email} readOnly /></label>
+        <button className="primary-btn" onClick={() => setView('menu')}>Save profile</button>
+      </section>
+    );
+  }
+
+  if (view === 'fit') {
+    return (
+      <section className="profile-screen">
+        <ProfileSubheader title="Fit Preferences" onBack={() => setView('menu')} />
+        <div className="preference-summary">
+          <strong>{user.profile.gender}</strong>
+          <span>{user.profile.skinTone} skin tone · Size {user.profile.size}</span>
+        </div>
+        <div className="setup-control-group">
+          <span>Gender</span>
+          <div className="gender-options">
+            {(['Male', 'Female'] as const).map(gender => (
+              <button
+                className={user.profile.gender === gender ? 'active' : ''}
+                type="button"
+                onClick={() => updateUser(current => ({
+                  ...current,
+                  profile: {
+                    ...current.profile,
+                    gender,
+                    styles: current.profile.styles.filter(style => styleOptions(gender).includes(style)).length
+                      ? current.profile.styles.filter(style => styleOptions(gender).includes(style))
+                      : styleOptions(gender).slice(0, 1),
+                  },
+                }))}
+                key={gender}
+              >
+                <i />{gender}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="field-grid">
+          <label>Skin Tone
+            <select value={user.profile.skinTone} onChange={event => updateUser(current => ({ ...current, profile: { ...current.profile, skinTone: event.target.value } }))}>
+              {['Yellow', 'Fair', 'Medium', 'Olive', 'Deep'].map(tone => <option key={tone}>{tone}</option>)}
+            </select>
+          </label>
+          <label>Size
+            <select value={user.profile.size} onChange={event => updateUser(current => ({ ...current, profile: { ...current.profile, size: event.target.value } }))}>
+              {['XS', 'S', 'M', 'L', 'XL'].map(size => <option key={size}>{size}</option>)}
+            </select>
+          </label>
+        </div>
+        <h3>Style Preferences</h3>
+        <div className="style-grid preference-style-grid">
+          {styleOptions(user.profile.gender).map(option => (
+            <button
+              className={user.profile.styles.includes(option) ? 'style-card selected' : 'style-card'}
+              onClick={() => updateUser(current => ({
+                ...current,
+                profile: {
+                  ...current.profile,
+                  styles: current.profile.styles.includes(option)
+                    ? current.profile.styles.filter(item => item !== option)
+                    : [...current.profile.styles, option],
+                },
+              }))}
+              key={option}
+            >
+              <FashionTile variant={`${user.profile.gender}-${option}`} />
+              <span>{option}</span>
+            </button>
+          ))}
+        </div>
+        <button className="primary-btn" onClick={() => setView('menu')}>Save preferences</button>
+      </section>
+    );
+  }
+
+  if (view === 'history') {
+    return (
+      <section className="profile-screen">
+        <ProfileSubheader title="Try-on History" onBack={() => setView('menu')} />
+        <div className="profile-history-grid">
+          {user.tryOnHistory.map(id => {
+            const look = looks.find(item => item.id === id) ?? looks[0];
+            return (
+              <button key={id} onClick={() => openLook(look.id)}>
+                <FashionTile variant={look.image} />
+                <span><strong>{look.title}</strong><small>{look.vibe}</small></span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
+  if (view === 'privacy' || view === 'help') {
+    const isPrivacy = view === 'privacy';
+    return (
+      <section className="profile-screen">
+        <ProfileSubheader title={isPrivacy ? 'Privacy Policy' : 'Help & Support'} onBack={() => setView('menu')} />
+        <div className="info-panel">
+          <h3>{isPrivacy ? 'Your style memory stays scoped to you.' : 'How can we help?'}</h3>
+          <p>{isPrivacy
+            ? 'This prototype keeps profile details, style choices, chat memory, try-ons, and polls scoped to the active Myuze user. Future backend reads and writes should enforce the same user and tenant boundaries.'
+            : 'For now, this prototype supports the core styling flow: chat for looks, try them on, share challenges, and edit your profile preferences from this menu.'}</p>
+          <button className="outline-btn" onClick={() => setView('menu')}>Back to settings</button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="profile-screen">
       <div className="profile-card">
         <Avatar name={user.name} />
-        <div><h2>{user.profile.fullName}</h2><p>{user.email}</p></div>
+        <div><h2>{user.profile.fullName}</h2><button onClick={() => setView('edit')}>Edit Profile</button></div>
       </div>
-      <label>Full name<input value={user.profile.fullName} onChange={event => updateUser(current => ({ ...current, profile: { ...current.profile, fullName: event.target.value } }))} /></label>
-      <label>Email<input value={user.email} readOnly /></label>
-      {['Fit Preferences', 'Privacy Policy', 'Help & Support'].map(item => <button className="settings-row" key={item}>{item}<span>›</span></button>)}
-      <button className="settings-row" onClick={() => setTab('tryon')}>Try On History<span>›</span></button>
+      <button className="settings-row" data-testid="fit-preferences-row" onClick={() => setView('fit')}>♡ <span>Fit Preferences</span><b>›</b></button>
+      <button className="settings-row" onClick={() => setView('history')}>◷ <span>Try-on History</span><b>›</b></button>
+      <button className="settings-row" onClick={() => setView('privacy')}>◇ <span>Privacy Policy</span><b>›</b></button>
+      <button className="settings-row" onClick={() => setView('help')}>? <span>Help & Support</span><b>›</b></button>
       <button className="logout-btn" onClick={onLogout}>Log Out</button>
     </section>
+  );
+}
+
+function ProfileSubheader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <div className="profile-subheader">
+      <button aria-label="Back to profile menu" onClick={onBack}>‹</button>
+      <h2>{title}</h2>
+      <span />
+    </div>
   );
 }
 
@@ -926,17 +1174,17 @@ function PollSheet({ user, onClose, onTry }: { user: TenantUser; onClose: () => 
   );
 }
 
-function DrawerSheet({ user, onClose, setTab, onToast, onLogout }: {
+function DrawerSheet({ user, onClose, setTab, setProfileView, onLogout }: {
   user: TenantUser;
   onClose: () => void;
   setTab: (tab: Tab) => void;
-  onToast: (message: string) => void;
+  setProfileView: (view: ProfileView) => void;
   onLogout: () => void;
 }) {
-  const openTryOnHistory = () => {
-    setTab('tryon');
+  const openProfileView = (view: ProfileView) => {
+    setProfileView(view);
+    setTab('profile');
     onClose();
-    onToast('Opened Try-on History.');
   };
 
   return (
@@ -946,17 +1194,14 @@ function DrawerSheet({ user, onClose, setTab, onToast, onLogout }: {
           <Avatar name={user.name} index={0} />
           <span>
             <strong>{user.name}</strong>
-            <button onClick={() => {
-              setTab('profile');
-              onClose();
-            }}>Edit Profile</button>
+            <button onClick={() => openProfileView('edit')}>Edit Profile</button>
           </span>
         </div>
         <nav className="drawer-nav">
-          <button onClick={() => onToast('Fit Preferences will open in the full account flow.')}>♡ <span>Fit Preferences</span><b>›</b></button>
-          <button onClick={openTryOnHistory}>◷ <span>Try-on History</span><b>›</b></button>
-          <button onClick={() => onToast('Privacy Policy will open in the full account flow.')}>◇ <span>Privacy Policy</span><b>›</b></button>
-          <button onClick={() => onToast('Help & Support will open in the full account flow.')}>? <span>Help & Support</span><b>›</b></button>
+          <button data-testid="drawer-fit-preferences" onClick={() => openProfileView('fit')}>♡ <span>Fit Preferences</span><b>›</b></button>
+          <button data-testid="drawer-tryon-history" onClick={() => openProfileView('history')}>◷ <span>Try-on History</span><b>›</b></button>
+          <button data-testid="drawer-privacy" onClick={() => openProfileView('privacy')}>◇ <span>Privacy Policy</span><b>›</b></button>
+          <button data-testid="drawer-help" onClick={() => openProfileView('help')}>? <span>Help & Support</span><b>›</b></button>
         </nav>
         <button className="drawer-logout" data-testid="drawer-logout" onClick={onLogout}>↪ <span>Log Out</span></button>
       </aside>
@@ -1026,6 +1271,18 @@ function FashionHero({ look }: { look: Look }) {
 function FashionTile({ variant }: { variant: string }) {
   const normalized = variant.toLowerCase().replace(/\s+/g, '-');
   const indexByVariant: Record<string, number> = {
+    'female-minimal': 0,
+    'female-casual': 1,
+    'female-office': 4,
+    'female-vintage': 5,
+    'female-athleisure': 3,
+    'female-bohemian': 2,
+    'male-streetwear': 6,
+    'male-casual': 8,
+    'male-workwear': 7,
+    'male-business-casual': 9,
+    'male-classic': 10,
+    'male-minimal': 11,
     street: 6,
     streetwear: 6,
     weekend: 0,
@@ -1044,9 +1301,10 @@ function FashionTile({ variant }: { variant: string }) {
     y2k: 11,
     sage: 7,
   };
-  const photo = modelPhotos[indexByVariant[normalized] ?? 0];
+  const preferencePhoto = styleThumbnails[normalized];
+  const photo = preferencePhoto ?? modelPhotos[indexByVariant[normalized] ?? 0];
   return (
-    <div className={`fashion-tile ${normalized}`}>
+    <div className={`fashion-tile ${preferencePhoto ? 'preference-tile' : normalized}`}>
       <img src={photo} alt="" />
     </div>
   );
