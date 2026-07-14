@@ -3,29 +3,26 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/functions'],
-          'vendor-redux': ['@reduxjs/toolkit', 'react-redux', 'redux-persist'],
-          'vendor-styled': ['styled-components'],
-        },
+  esbuild: {
+    tsconfigRaw: {
+      compilerOptions: {
+        jsx: 'react-jsx',
+        useDefineForClassFields: true,
       },
     },
   },
+  server: { host: '127.0.0.1' },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icons/*.png'],
+      includeAssets: ['icons/*.png'],
       manifest: {
         name: 'Myuze – AI Fashion Stylist',
         short_name: 'Myuze',
         description: 'Find your style with AI. Try it on. Own it.',
-        theme_color: '#030318',
-        background_color: '#ffffff',
+        theme_color: '#2D72F6',
+        background_color: '#FDFBF7',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -37,7 +34,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,jpg,webp,svg,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/f18rfk2917\.execute-api\.us-east-1\.amazonaws\.com\/.*/i,

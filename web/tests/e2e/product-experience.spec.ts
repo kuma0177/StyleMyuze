@@ -1,82 +1,70 @@
 import { expect, test } from '@playwright/test';
-import { expectNoDebugTenantMenu, seedSignedInUser, startFresh } from './fixtures';
+import { seedSignedInUser, startFresh } from './fixtures';
 
 test.describe('Myuze product experience', () => {
-  test('first-run auth and onboarding reaches the AI stylist home', async ({ page }) => {
+  test('first-run auth and onboarding reaches the personal stylist', async ({ page }) => {
     await startFresh(page);
 
-    await page.getByTestId('join-waitlist').click();
-    await expect(page.getByRole('heading', { name: 'Enter your email' })).toBeVisible();
+    await page.getByLabel('Email').fill('maya@myuze.app');
+    await page.getByRole('button', { name: 'Continue with email' }).click();
+    await expect(page.getByRole('heading', { name: 'Enter your code.' })).toBeVisible();
+    await page.getByLabel('Four-digit code').fill('2468');
+    await page.getByRole('button', { name: 'Verify and continue' }).click();
 
-    await page.getByPlaceholder('Enter email').fill('maya@myuze.app');
-    await page.getByTestId('continue-email').click();
-    await expect(page.getByText('Check your email')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Make every suggestion fit.' })).toBeVisible();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('heading', { name: 'What feels like you?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Workwear' }).click();
+    await page.getByRole('button', { name: 'Finish profile' }).click();
 
-    await page.getByTestId('verify-otp').click();
-    await expect(page.getByText('Set up your account')).toBeVisible();
-    await expect(page.getByText('Gender')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Female', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Male', exact: true }).click();
-
-    await page.getByTestId('setup-continue').click();
-    await expect(page.getByText('Pick Your Style')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Streetwear', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Casual', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Workwear', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Business Casual', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Classic', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Minimal', exact: true })).toBeVisible();
-    await expect(page.getByText('Bohemian')).toHaveCount(0);
-
-    await page.getByTestId('setup-continue').click();
-    await expect(page.getByText('Hi there')).toBeVisible();
-    await expect(page.getByPlaceholder('Ask me anything...')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'What are you dressing for?' })).toBeVisible();
+    await expect(page.getByPlaceholder('Ask Myuze anything…')).toBeVisible();
   });
 
-  test('core signed-in journey: chat, discover, try-on, challenge, share, drawer logout', async ({ page }) => {
+  test('core journey works from discovery through try-on, challenge, share, and shopping', async ({ page }) => {
     await seedSignedInUser(page);
     await page.goto('/');
 
-    await expect(page.getByText('Hi there')).toBeVisible();
-    await expect(page.getByText('Trending looks')).toBeVisible();
-    await expect(page.getByText('See all')).toBeVisible();
-    await expect(page.getByText('Try on a screenshot')).toHaveCount(0);
-    await page.getByText('Style me for a first date').click();
-    await expect(page.getByText(/I used Streetwear, Soft Minimal/)).toBeVisible();
-    await expect(page.getByText('Try Now').first()).toBeVisible();
-
-    await page.getByTestId('tab-discover').click();
-    await expect(page.getByPlaceholder('Search')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'For You' })).toHaveClass(/active/);
-
-    await page.getByText('Try Now').first().click();
-    await expect(page.getByRole('heading', { name: 'Try On', exact: true })).toBeVisible();
-    await expect(page.getByText('Challenge')).toBeVisible();
-    await expect(page.getByText('Create Reel')).toBeVisible();
-    await expect(page.getByText('Shop Now')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Your gallery opening look' })).toBeVisible();
+    await page.getByRole('button', { name: 'Shop the look' }).click();
+    await expect(page.getByRole('dialog', { name: 'Shop the look' })).toBeVisible();
+    await expect(page.getByText('Estimated total')).toBeVisible();
+    await page.getByRole('button', { name: 'Prepare shopping list' }).click();
+    await expect(page.getByRole('status')).toContainText('Shopping list prepared');
 
     await page.getByRole('button', { name: 'Challenge' }).click();
-    await expect(page.getByText('Style Challenge')).toBeVisible();
-    await expect(page.getByText('Style This Item')).toBeVisible();
-    await page.getByRole('button', { name: 'Share' }).click();
-    await expect(page.getByRole('heading', { name: 'Share' })).toBeVisible();
-    await expect(page.getByText('IG')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Create a challenge' })).toBeVisible();
+    await page.getByRole('radio', { name: 'Outfit battle' }).check();
+    await page.getByRole('button', { name: 'Create share card' }).click();
+    await expect(page.getByRole('dialog', { name: 'Share your look' })).toBeVisible();
+    await page.getByRole('button', { name: 'Instagram' }).click();
+    await expect(page.getByRole('status')).toContainText('Instagram share is ready');
+    await page.getByRole('button', { name: 'Close Share your look' }).click();
 
-    await page.getByRole('button', { name: '×' }).click();
-    await page.getByTestId('hamburger-menu').click();
-    await expect(page.getByLabel('Myuze menu')).toBeVisible();
-    await expect(page.getByText('Help & Support')).toBeVisible();
-    await expectNoDebugTenantMenu(page);
+    await page.getByTestId('tab-discover').click();
+    await expect(page.getByRole('heading', { name: 'Find your next look.' })).toBeVisible();
+    await page.getByLabel('Search looks').fill('workwear');
+    await expect(page.getByRole('button', { name: /Modern Workwear outfit/ })).toBeVisible();
+    await page.getByRole('button', { name: /Modern Workwear outfit/ }).click();
+    await expect(page.getByRole('heading', { name: 'Your creative meeting look' })).toBeVisible();
+  });
 
-    await page.getByTestId('drawer-fit-preferences').click();
-    await expect(page.getByRole('heading', { name: 'Fit Preferences' })).toBeVisible();
-    await page.getByRole('button', { name: 'Male', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Workwear', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Classic', exact: true }).click();
-    await page.getByRole('button', { name: 'Save preferences' }).click();
-    await expect(page.getByTestId('fit-preferences-row')).toBeVisible();
-    await page.getByRole('button', { name: 'Log Out' }).click();
-    await expect(page.getByText('Find your style.')).toBeVisible();
-    await expect(page.getByTestId('join-waitlist')).toBeVisible();
+  test('profile, notifications, save state, and keyboard dialog dismissal work', async ({ page }) => {
+    await seedSignedInUser(page);
+    await page.goto('/');
+
+    await page.getByRole('button', { name: 'Saved' }).click();
+    await expect(page.getByRole('status')).toContainText('Removed from saved');
+    await page.getByRole('button', { name: 'Open notifications' }).click();
+    await expect(page.getByRole('dialog', { name: 'Notifications' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Notifications' })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.getByRole('button', { name: /Maya Johnson/ }).click();
+    await expect(page.getByRole('dialog', { name: 'Style profile' })).toBeVisible();
+    await page.getByLabel('Size').selectOption('L');
+    await page.getByRole('button', { name: 'Save profile' }).click();
+    await expect(page.getByRole('status')).toContainText('Profile changes saved');
   });
 });

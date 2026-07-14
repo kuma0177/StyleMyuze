@@ -1,1328 +1,781 @@
-import React, { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowLeft,
+  ArrowUp,
+  Bell,
+  BookmarkSimple,
+  Camera,
+  CaretLeft,
+  CaretRight,
+  Check,
+  Copy,
+  Crosshair,
+  DotsThree,
+  Envelope,
+  FacebookLogo,
+  House,
+  ImageSquare,
+  InstagramLogo,
+  Link,
+  List,
+  MagnifyingGlass,
+  PaintBrush,
+  PinterestLogo,
+  Plus,
+  Ruler,
+  ShareNetwork,
+  ShieldCheck,
+  ShoppingBag,
+  SignOut,
+  Sparkle,
+  Sword,
+  UserCircle,
+  WhatsappLogo,
+  X,
+} from '@phosphor-icons/react';
+import '@fontsource/instrument-sans/400.css';
+import '@fontsource/instrument-sans/500.css';
+import '@fontsource/instrument-sans/600.css';
+import '@fontsource/instrument-sans/700.css';
 import './styles/global.css';
 import myuzeLogo from './assets/myuze-assets/myuze-logo-full.svg';
-import waitlistHero from './assets/myuze-assets/waitlist-hero-fashion.png';
-import female1 from './assets/myuze-assets/female-1.png';
-import female2 from './assets/myuze-assets/female-2.png';
-import female3 from './assets/myuze-assets/female-3.png';
-import female4 from './assets/myuze-assets/female-4.png';
-import female5 from './assets/myuze-assets/female-5.png';
-import female6 from './assets/myuze-assets/female-6.png';
-import male1 from './assets/myuze-assets/male-1.png';
-import male2 from './assets/myuze-assets/male-2.png';
-import male3 from './assets/myuze-assets/male-3.png';
-import male4 from './assets/myuze-assets/male-4.png';
-import male5 from './assets/myuze-assets/male-5.png';
-import male6 from './assets/myuze-assets/male-6.png';
-import styleFemaleAthleisure from './assets/myuze-assets/style-female-athleisure.jpg';
-import styleFemaleBohemian from './assets/myuze-assets/style-female-bohemian.jpg';
-import styleFemaleCasual from './assets/myuze-assets/style-female-casual.jpg';
-import styleFemaleMinimal from './assets/myuze-assets/style-female-minimal.jpg';
-import styleFemaleOffice from './assets/myuze-assets/style-female-office.jpg';
-import styleFemaleVintage from './assets/myuze-assets/style-female-vintage.jpg';
-import styleMaleBusinessCasual from './assets/myuze-assets/style-male-business-casual.jpg';
-import styleMaleCasual from './assets/myuze-assets/style-male-casual.jpg';
-import styleMaleClassic from './assets/myuze-assets/style-male-classic.jpg';
-import styleMaleMinimal from './assets/myuze-assets/style-male-minimal.jpg';
-import styleMaleStreetwear from './assets/myuze-assets/style-male-streetwear.jpg';
-import styleMaleWorkwear from './assets/myuze-assets/style-male-workwear.jpg';
+import googleLogo from './assets/myuze-assets/google-g.svg';
+import dinnerWithFriends from './assets/myuze-assets/homepage/dinner-with-friends.webp';
+import brunchDate from './assets/myuze-assets/homepage/brunch-date.webp';
+import weekendGetaway from './assets/myuze-assets/homepage/weekend-getaway.webp';
+import workPresentation from './assets/myuze-assets/homepage/work-presentation.webp';
+import { initialState, looks, styleOptions } from './prototype/data';
+import type { AuthView, Look, ModalId, TabId } from './prototype/types';
+import { usePrototypeStore } from './prototype/usePrototypeStore';
 
-type Tab = 'home' | 'discover' | 'tryon' | 'profile';
-type AuthMode = 'waitlist' | 'signin' | 'signup' | 'otp';
-type SetupStep = 'account' | 'style' | 'done';
-type Modal = 'moodboard' | 'challenge' | 'share' | 'reel' | 'poll' | 'drawer' | null;
-type ProfileView = 'menu' | 'edit' | 'fit' | 'history' | 'privacy' | 'help';
-
-type TenantUser = {
-  id: string;
-  name: string;
-  email: string;
-  setupStep: SetupStep;
-  profile: {
-    fullName: string;
-    gender: 'Female' | 'Male';
-    skinTone: string;
-    size: string;
-    styles: string[];
-    influencers: string[];
-    inspirationLinks: string[];
-  };
-  chat: ChatMessage[];
-  savedLooks: string[];
-  tryOnHistory: string[];
-  polls: Poll[];
-};
-
-type Tenant = {
-  id: string;
-  name: string;
-  users: Record<string, TenantUser>;
-};
-
-type PrototypeStore = {
-  activeTenantId: string;
-  activeUserId: string;
-  tenants: Record<string, Tenant>;
-};
-
-type ChatMessage = {
-  id: string;
-  role: 'assistant' | 'user';
-  text: string;
-  lookIds?: string[];
-};
-
-type Poll = {
-  id: string;
-  question: string;
-  lookIds: string[];
-  votes: Record<string, number>;
-};
-
-type Look = {
-  id: string;
-  title: string;
-  vibe: string;
-  price: string;
-  tags: string[];
-  items: string[];
-  palette: string[];
-  image: string;
-  photo: string;
-};
-
-const modelPhotos = [female1, female2, female3, female4, female5, female6, male1, male2, male3, male4, male5, male6];
-
-const styleThumbnails: Record<string, string> = {
-  'female-minimal': styleFemaleMinimal,
-  'female-casual': styleFemaleCasual,
-  'female-office': styleFemaleOffice,
-  'female-vintage': styleFemaleVintage,
-  'female-athleisure': styleFemaleAthleisure,
-  'female-bohemian': styleFemaleBohemian,
-  'male-streetwear': styleMaleStreetwear,
-  'male-casual': styleMaleCasual,
-  'male-workwear': styleMaleWorkwear,
-  'male-business-casual': styleMaleBusinessCasual,
-  'male-classic': styleMaleClassic,
-  'male-minimal': styleMaleMinimal,
-};
-
-const looks: Look[] = [
-  {
-    id: 'soft-street',
-    title: 'Soft Street',
-    vibe: 'Clean layers, easy sneakers, relaxed-but-intentional.',
-    price: '$84-ish',
-    tags: ['warm weather', 'your colors', 'Gen Z casual'],
-    items: ['Boxy white tee', 'Washed denim', 'Sage overshirt', 'Low-profile sneakers'],
-    palette: ['#f7f3ea', '#95a987', '#0e1620', '#d7e9ff'],
-    image: 'street',
-    photo: male1,
-  },
-  {
-    id: 'clean-weekend',
-    title: 'Clean Weekend',
-    vibe: 'Brunch-to-errands fit with soft neutrals and good shape.',
-    price: '$112-ish',
-    tags: ['minimal', 'weekend', 'shop similar'],
-    items: ['Ribbed tank', 'Wide-leg trouser', 'Cropped jacket', 'Silver hoops'],
-    palette: ['#ffffff', '#c9c2b8', '#111111', '#8aa6c9'],
-    image: 'weekend',
-    photo: female1,
-  },
-  {
-    id: 'rooftop-casual',
-    title: 'Rooftop Casual',
-    vibe: 'Date-night energy without trying too hard.',
-    price: '$96-ish',
-    tags: ['date night', 'photo ready', 'night out'],
-    items: ['Textured shirt', 'Tailored pant', 'Slim belt', 'Statement watch'],
-    palette: ['#e8ddd0', '#7d8d74', '#f5f5f1', '#090909'],
-    image: 'rooftop',
-    photo: male3,
-  },
-  {
-    id: 'work-ish',
-    title: 'Work-ish',
-    vibe: 'Polished enough for meetings, comfortable enough for the commute.',
-    price: '$128-ish',
-    tags: ['office', 'classic', 'millennial friendly'],
-    items: ['Soft blazer', 'Relaxed denim', 'Cream knit', 'Loafers'],
-    palette: ['#ebe5da', '#1d2939', '#bdc7c2', '#ffffff'],
-    image: 'work',
-    photo: female4,
-  },
-];
-
-const defaultChat: ChatMessage[] = [
-  {
-    id: 'c1',
-    role: 'assistant',
-    text: 'Hi Maya. Drop a screenshot, link, product, or vibe and I will turn it into fits that remember your style twin.',
-  },
-];
-
-const makeUser = (id: string, name: string, email: string): TenantUser => ({
-  id,
-  name,
-  email,
-  setupStep: 'account',
-  profile: {
-    fullName: name,
-    gender: 'Female',
-    skinTone: 'Medium',
-    size: 'M',
-    styles: ['Streetwear', 'Soft Minimal'],
-    influencers: [],
-    inspirationLinks: [],
-  },
-  chat: defaultChat,
-  savedLooks: ['soft-street'],
-  tryOnHistory: ['rooftop-casual'],
-  polls: [],
-});
-
-const initialStore: PrototypeStore = {
-  activeTenantId: 'myuze-studio',
-  activeUserId: 'maya',
-  tenants: {
-    'myuze-studio': {
-      id: 'myuze-studio',
-      name: 'Myuze Studio',
-      users: {
-        maya: makeUser('maya', 'Maya Johnson', 'maya@myuze.app'),
-        jordan: {
-          ...makeUser('jordan', 'Jordan Lee', 'jordan@myuze.app'),
-          setupStep: 'done',
-          profile: {
-            fullName: 'Jordan Lee',
-            gender: 'Male',
-            skinTone: 'Olive',
-            size: 'L',
-            styles: ['Workwear', 'Streetwear', 'Minimal'],
-          influencers: [],
-          inspirationLinks: ['capsule fall layers'],
-          },
-          chat: [
-            ...defaultChat,
-            {
-              id: 'c2',
-              role: 'user',
-              text: 'I need a clean gallery opening fit that still feels like me.',
-            },
-            {
-              id: 'c3',
-              role: 'assistant',
-              text: 'I remember you like structured layers and low-contrast palettes. I pulled three directions with softer tailoring.',
-              lookIds: ['work-ish', 'soft-street', 'rooftop-casual'],
-            },
-          ],
-        },
-      },
-    },
-    'campus-drop': {
-      id: 'campus-drop',
-      name: 'Campus Drop',
-      users: {
-        tasha: {
-          ...makeUser('tasha', 'Tasha Green', 'tasha@campus.example'),
-          setupStep: 'done',
-          profile: {
-            fullName: 'Tasha Green',
-            gender: 'Female',
-            skinTone: 'Deep',
-            size: 'S',
-            styles: ['Y2K', 'Color Pop', 'Budget Finds'],
-            influencers: [],
-            inspirationLinks: ['festival haul screenshot'],
-          },
-          savedLooks: ['clean-weekend', 'soft-street'],
-        },
-      },
-    },
-  },
-};
-
-const storeKey = 'myuze-pwa-prototype-v1';
-
-function loadStore(): PrototypeStore {
-  try {
-    const raw = localStorage.getItem(storeKey);
-    if (!raw) return initialStore;
-    const parsed = JSON.parse(raw) as PrototypeStore;
-    Object.values(parsed.tenants).forEach(tenant => {
-      Object.values(tenant.users).forEach(user => {
-        if (!['account', 'style', 'done'].includes(user.setupStep)) {
-          user.setupStep = 'account';
-        }
-      });
-    });
-    return parsed;
-  } catch {
-    return initialStore;
-  }
-}
-
-function usePrototypeStore() {
-  const [store, setStore] = useState<PrototypeStore>(loadStore);
-
-  const commit = (updater: (draft: PrototypeStore) => PrototypeStore) => {
-    setStore(prev => {
-      const next = updater(structuredClone(prev));
-      localStorage.setItem(storeKey, JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const tenant = store.tenants[store.activeTenantId];
-  const user = tenant.users[store.activeUserId];
-
-  const updateUser = (updater: (user: TenantUser) => TenantUser) => commit(draft => {
-    const activeTenant = draft.tenants[draft.activeTenantId];
-    activeTenant.users[draft.activeUserId] = updater(activeTenant.users[draft.activeUserId]);
-    return draft;
-  });
-
-  return { store, tenant, user, commit, updateUser };
-}
-
-const uid = () => Math.random().toString(36).slice(2, 9);
+const makeId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 function App() {
-  const { tenant, user, updateUser } = usePrototypeStore();
-  const [authMode, setAuthMode] = useState<AuthMode>('waitlist');
-  const [authIntent, setAuthIntent] = useState<'signin' | 'signup'>('signin');
-  const [sessionActive, setSessionActive] = useState(user.setupStep !== 'account');
-  const [tab, setTab] = useState<Tab>('home');
-  const [modal, setModal] = useState<Modal>(null);
+  const { state, update } = usePrototypeStore();
+  const [tab, setTab] = useState<TabId>('tryon');
+  const [authView, setAuthView] = useState<AuthView>('waitlist');
+  const [modal, setModal] = useState<ModalId>(null);
   const [selectedLookId, setSelectedLookId] = useState('soft-street');
-  const [chatInput, setChatInput] = useState('');
-  const [productOpen, setProductOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [discoverMode, setDiscoverMode] = useState<'For you' | 'Trending' | 'Following'>('For you');
   const [toast, setToast] = useState('');
-  const [profileView, setProfileView] = useState<ProfileView>('menu');
 
-  const isSignedIn = sessionActive;
-  const setupComplete = user.setupStep === 'done';
   const selectedLook = looks.find(look => look.id === selectedLookId) ?? looks[0];
+  const savedLooks = looks.filter(look => state.savedLookIds.includes(look.id));
 
-  const setAuthFlow = (mode: AuthMode) => {
-    if (mode === 'signin' || mode === 'signup') setAuthIntent(mode);
-    setAuthMode(mode);
+  const notify = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(''), 2600);
+  };
+
+  const openLook = (lookId: string) => {
+    setSelectedLookId(lookId);
+    setTab('tryon');
+    setModal(null);
+  };
+
+  const toggleSave = (lookId = selectedLookId) => {
+    const isSaved = state.savedLookIds.includes(lookId);
+    update(current => ({
+      ...current,
+      savedLookIds: isSaved
+        ? current.savedLookIds.filter(id => id !== lookId)
+        : [lookId, ...current.savedLookIds],
+    }));
+    notify(isSaved ? 'Removed from saved looks.' : 'Saved to your looks.');
   };
 
   const completeAuth = () => {
-    if (authIntent === 'signup') {
-      updateUser(current => ({
-        ...current,
-        setupStep: 'account',
-        profile: {
-          ...current.profile,
-          styles: styleOptions(current.profile.gender).slice(0, 1),
-        },
-      }));
-    }
-    setSessionActive(true);
-    setToast('');
+    update(current => ({ ...current, signedIn: true, onboardingComplete: false }));
+    setAuthView('waitlist');
   };
 
-  const sendChat = (text = chatInput) => {
-    const clean = text.trim();
-    if (!clean) return;
-    updateUser(current => ({
-      ...current,
-      chat: [
-        ...current.chat,
-        { id: uid(), role: 'user', text: clean },
-        {
-          id: uid(),
-          role: 'assistant',
-          text: `I used ${current.profile.styles.join(', ') || 'your saved choices'} plus your past chats to make three looks. Pick one to try on or poll friends.`,
-          lookIds: ['soft-street', 'clean-weekend', 'rooftop-casual'],
-        },
-      ],
-    }));
-    setChatInput('');
-    setToast('Chat saved to this user profile. Backend can hydrate this from history later.');
-  };
-
-  const finishSetup = () => {
-    updateUser(current => ({ ...current, setupStep: 'done' }));
-    setSessionActive(true);
-    setTab('home');
-    setToast('');
-  };
-
-  const logOut = () => {
+  const logout = () => {
+    update(current => ({ ...current, signedIn: false }));
     setModal(null);
     setTab('home');
-    setProfileView('menu');
-    setProductOpen(false);
-    setAuthMode('waitlist');
-    setAuthIntent('signin');
-    setSessionActive(false);
+    setAuthView('waitlist');
+    notify('You are signed out.');
   };
 
-  const openLook = (lookId: string, nextTab: Tab = 'tryon') => {
-    setSelectedLookId(lookId);
-    setTab(nextTab);
-    setProductOpen(false);
-  };
-
-  const saveTryOn = (lookId = selectedLookId) => {
-    updateUser(current => ({
-      ...current,
-      tryOnHistory: Array.from(new Set([lookId, ...current.tryOnHistory])),
-      savedLooks: Array.from(new Set([lookId, ...current.savedLooks])),
-    }));
-    setToast('Saved to try-on history for this user only.');
-  };
-
-  const createPoll = () => {
-    const challengerId = selectedLookId === 'soft-street' ? 'rooftop-casual' : selectedLookId;
-    updateUser(current => ({
-      ...current,
-      polls: [
-        {
-          id: uid(),
-          question: `Help ${current.name.split(' ')[0]} pick a fit`,
-          lookIds: ['soft-street', challengerId],
-          votes: { 'soft-street': 63, [challengerId]: 37 },
-        },
-        ...current.polls,
-      ],
-    }));
-    setModal('poll');
-    setToast('Public poll link created. Voters can try the vibe after voting.');
-  };
-
-  return (
-    <main className="app-stage">
-      <section className="phone-shell" aria-label="Myuze interactive PWA prototype">
-        <StatusBar />
-        {!isSignedIn ? (
-          <AuthScreen mode={authMode} setMode={setAuthFlow} onContinue={completeAuth} />
-        ) : !setupComplete ? (
-          <SetupFlow user={user} updateUser={updateUser} onDone={finishSetup} />
-        ) : (
-          <>
-            <AppHeader
-              tenant={tenant}
-              user={user}
-              onSwitch={() => setModal('drawer')}
-              onNotify={() => setToast('New outfit ideas are waiting for this account.')}
-            />
-            <div className="screen-body">
-              {tab === 'home' && (
-                <HomeScreen
-                  user={user}
-                  chatInput={chatInput}
-                  setChatInput={setChatInput}
-                  sendChat={sendChat}
-                  openMoodboard={() => setModal('moodboard')}
-                  openLook={openLook}
-                />
-              )}
-              {tab === 'discover' && (
-                <DiscoverScreen
-                  openLook={openLook}
-                  openProduct={(lookId) => {
-                    setSelectedLookId(lookId);
-                    setProductOpen(true);
-                  }}
-                />
-              )}
-              {tab === 'tryon' && productOpen ? (
-                <ProductDetail look={selectedLook} onTry={() => setProductOpen(false)} />
-              ) : tab === 'tryon' ? (
-                <TryOnScreen
-                  look={selectedLook}
-                  historyIds={user.tryOnHistory}
-                  openLook={openLook}
-                  onChallenge={() => setModal('challenge')}
-                  onShare={() => setModal('share')}
-                  onReel={() => setModal('reel')}
-                  saveTryOn={saveTryOn}
-                />
-              ) : null}
-              {tab === 'profile' && (
-                <ProfileScreen
-                  user={user}
-                  view={profileView}
-                  setView={setProfileView}
-                  updateUser={updateUser}
-                  setTab={setTab}
-                  openLook={openLook}
-                  onLogout={logOut}
-                />
-              )}
-            </div>
-            <TabBar tab={tab} setTab={setTab} />
-          </>
-        )}
-        {modal === null && isSignedIn && toast && <Toast key={toast} message={toast} />}
-        {modal === 'moodboard' && (
-          <MoodboardSheet
-            onClose={() => setModal(null)}
-            onCreate={() => {
-              updateUser(current => ({
-                ...current,
-                profile: {
-                  ...current.profile,
-                  inspirationLinks: Array.from(new Set(['uploaded moodboard', ...current.profile.inspirationLinks])),
-                },
-                chat: [
-                  ...current.chat,
-                  {
-                    id: uid(),
-                    role: 'assistant',
-                    text: 'I read the vibe: soft neutrals, relaxed tailoring, photo-ready layers. Here are three looks built from your style twin.',
-                    lookIds: ['soft-street', 'clean-weekend', 'rooftop-casual'],
-                  },
-                ],
-              }));
-              setModal(null);
-              setTab('home');
-              setToast('Moodboard saved as a user style signal.');
-            }}
-          />
-        )}
-        {modal === 'challenge' && (
-          <ChallengeSheet
-            onClose={() => setModal(null)}
-            onPoll={createPoll}
-            onShare={() => setModal('share')}
-          />
-        )}
-        {modal === 'share' && (
-          <ShareSheet
-            look={selectedLook}
-            onClose={() => setModal(null)}
-            onCopy={() => setToast('Share link copied: myuze.ai/look/soft-street')}
-          />
-        )}
-        {modal === 'reel' && (
-          <ReelSheet look={selectedLook} onClose={() => setModal(null)} onSave={saveTryOn} />
-        )}
-        {modal === 'poll' && (
-          <PollSheet user={user} onClose={() => setModal(null)} onTry={() => openLook('soft-street')} />
-        )}
-        {modal === 'drawer' && (
-          <DrawerSheet
-            user={user}
-            onClose={() => setModal(null)}
-            setTab={setTab}
-            setProfileView={setProfileView}
-            onLogout={logOut}
-          />
-        )}
-      </section>
-      <aside className="prototype-panel">
-        <div>
-          <p className="eyeline">Interactive prototype</p>
-          <h1>End-to-end Myuze PWA experience</h1>
-          <p>
-            This front-end reuses the existing Vite PWA stack and models the future backend contract:
-            every tenant owns distinct users, profiles, chats, selections, try-ons, and polls.
-          </p>
-        </div>
-        <MemoryCard tenant={tenant} user={user} />
-        <div className="handoff-card">
-          <h3>Backend-ready data boundaries</h3>
-          <ul>
-            <li><strong>Tenant</strong>: brand, workspace, billing, limits.</li>
-            <li><strong>User profile</strong>: measurements, size, tone, styles, inspiration.</li>
-            <li><strong>Chat memory</strong>: full conversation history by user.</li>
-            <li><strong>Creation graph</strong>: moodboards, looks, try-ons, reels, polls.</li>
-          </ul>
-        </div>
-      </aside>
-    </main>
-  );
-}
-
-function StatusBar() {
-  return (
-    <div className="status-bar">
-      <span>9:41</span>
-      <span>5G 100%</span>
-    </div>
-  );
-}
-
-function BrandMark() {
-  return (
-    <div className="brand-mark">
-      <img src={myuzeLogo} alt="Myuze" />
-    </div>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="google-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-      <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" />
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06L5.84 9.9C6.71 7.3 9.14 5.38 12 5.38z" />
-    </svg>
-  );
-}
-
-function AuthScreen({ mode, setMode, onContinue }: {
-  mode: AuthMode;
-  setMode: (mode: AuthMode) => void;
-  onContinue: () => void;
-}) {
-  if (mode === 'waitlist') {
+  if (!state.signedIn) {
     return (
-      <div className="waitlist-screen">
-        <img className="waitlist-photo" src={waitlistHero} alt="" />
-        <div className="waitlist-top">
-          <img src={myuzeLogo} alt="Myuze" />
-        </div>
-        <div className="waitlist-copy">
-          <span className="coming-soon">COMING SOON</span>
-          <h1>Find your style.<br />Try it on.<br />Own it.</h1>
-          <p>Chat with an AI stylist, generate looks on your own photo, and share them before you buy.</p>
-          <input placeholder="you@email.com" aria-label="Email for waitlist" />
-          <button className="gradient-btn" data-testid="join-waitlist" onClick={() => setMode('signup')}>Join the waitlist</button>
-          <button className="waitlist-link" onClick={() => setMode('signin')}>Already invited? <strong>Sign in</strong></button>
-        </div>
+      <div className="public-stage">
+        <AuthScreen view={authView} setView={setAuthView} onComplete={completeAuth} notify={notify} />
+        <Toast message={toast} />
       </div>
     );
   }
-  const isOtp = mode === 'otp';
-  return (
-    <div className="auth-screen auth-visual-screen">
-      <img className="auth-photo" src={waitlistHero} alt="" />
-      <BrandMark />
-      <div className="auth-visual-content">
-        <div className="auth-copy">
-          <h2>{isOtp ? 'Check your email' : mode === 'signup' ? 'Enter your email' : 'Find your style with AI.'}</h2>
-          <p>{isOtp ? 'We sent a verification code to you@email.com' : mode === 'signup' ? 'Enter your email to sign up' : 'Try it on. Own it.'}</p>
-        </div>
-        {!isOtp ? (
-          <div className="auth-form">
-            <button className="outline-btn google-auth"><GoogleIcon />Log in with Google</button>
-            <div className="divider">or</div>
-            <label>Email<input placeholder="Enter email" /></label>
-            <button className="primary-btn" data-testid="continue-email" onClick={() => setMode('otp')}>Continue with email</button>
-            <button className="text-btn" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
-              {mode === 'signin' ? 'Do not have an account? Sign Up' : 'Already using Myuze? Sign In'}
-            </button>
-          </div>
-        ) : (
-          <div className="auth-form">
-            <div className="otp-row"><span>1</span><span>1</span><span>0</span><span /></div>
-            <button className="primary-btn" data-testid="verify-otp" onClick={onContinue}>Verify</button>
-            <button className="text-btn" onClick={() => setMode('signin')}>Back to sign in</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
-function SetupFlow({ user, updateUser, onDone }: {
-  user: TenantUser;
-  updateUser: (updater: (user: TenantUser) => TenantUser) => void;
-  onDone: () => void;
-}) {
-  const steps: SetupStep[] = ['account', 'style'];
-  const currentIndex = Math.max(0, steps.indexOf(user.setupStep));
-  const next = () => {
-    const nextStep = steps[currentIndex + 1];
-    if (nextStep) updateUser(current => ({ ...current, setupStep: nextStep }));
-    else onDone();
-  };
-  const progress = `${currentIndex + 1}/2`;
+  if (!state.onboardingComplete) {
+    return (
+      <AppFrame>
+        <Onboarding
+          profile={state.profile}
+          updateProfile={profile => update(current => ({ ...current, profile }))}
+          onComplete={() => {
+            update(current => ({ ...current, onboardingComplete: true }));
+            setTab('home');
+            notify('Your style profile is ready.');
+          }}
+        />
+        <Toast message={toast} />
+      </AppFrame>
+    );
+  }
 
   return (
-    <div className="setup-screen">
-      <div className="setup-topbar">
-        <button className="setup-back" type="button" aria-label="Back">‹</button>
-        <BrandMark />
-      </div>
-      <div className="setup-progress-row">
-        {steps.map((step, index) => (
-          <span className={index <= currentIndex ? 'active' : ''} key={step} />
-        ))}
-        <strong>{progress}</strong>
-      </div>
-      {user.setupStep === 'account' && (
-        <section className="setup-section">
-          <div className="setup-heading">
-            <h2>Set up your account</h2>
-            <p>Please complete your try-on information</p>
-          </div>
-          <label>Full Name<input placeholder="Enter Full Name" value={user.profile.fullName} onChange={event => updateUser(current => ({
-            ...current,
-            profile: { ...current.profile, fullName: event.target.value },
-          }))} /></label>
-          <div className="setup-control-group">
-            <span>Gender</span>
-            <div className="gender-options">
-              {(['Male', 'Female'] as const).map(gender => (
-                <button
-                  className={user.profile.gender === gender ? 'active' : ''}
-                  type="button"
-                  onClick={() => updateUser(current => ({
-                    ...current,
-                    profile: {
-                      ...current.profile,
-                      gender,
-                      styles: styleOptions(gender).slice(0, 1),
-                    },
-                  }))}
-                  key={gender}
-                >
-                  <i />{gender}
-                </button>
-              ))}
-            </div>
-          </div>
-          <label>Skin Tone
-            <select value={user.profile.skinTone} onChange={event => updateUser(current => ({
-              ...current,
-              profile: { ...current.profile, skinTone: event.target.value },
-            }))}>
-              <option>Yellow</option>
-              <option>Fair</option>
-              <option>Medium</option>
-              <option>Olive</option>
-              <option>Deep</option>
-            </select>
-          </label>
-          <label>Size
-            <select value={user.profile.size} onChange={event => updateUser(current => ({
-              ...current,
-              profile: { ...current.profile, size: event.target.value },
-            }))}>
-              {['XS', 'S', 'M', 'L', 'XL'].map(size => <option key={size}>{size}</option>)}
-            </select>
-          </label>
-          <p className="setup-helper">Share your usual size to help us suggest the best fit</p>
-          <div className="profile-upload-card">
-            <strong>Profile Photo</strong>
-            <div className="profile-upload-box">
-              <FashionFigure />
-              <div className="upload-actions">
-                <button type="button" aria-label="Upload photo">⊕</button>
-                <button type="button" aria-label="Open camera">⌾</button>
-              </div>
-            </div>
-          </div>
-          <ul className="setup-guidance">
-            <li>Please keep the shooting environment clean and lighting appropriate for best fitting effect.</li>
-            <li>Please wear fitted clothes and keep your hands out of your pockets.</li>
-            <li>Your photo stays private and securely stored — never shared!</li>
-          </ul>
-        </section>
-      )}
-      {user.setupStep === 'style' && (
-        <section className="setup-section">
-          <div className="setup-heading">
-            <h2>Pick Your Style</h2>
-            <p>AI recommends styling based on your profile</p>
-          </div>
-          <div className="style-grid">
-            {styleOptions(user.profile.gender).map(option => (
-              <button
-                className={user.profile.styles.includes(option) ? 'style-card selected' : 'style-card'}
-                onClick={() => updateUser(current => ({
-                  ...current,
-                  profile: {
-                    ...current.profile,
-                    styles: current.profile.styles.includes(option)
-                      ? current.profile.styles.filter(item => item !== option)
-                      : [...current.profile.styles, option],
+    <AppFrame>
+      <Header
+        onMenu={() => setModal('drawer')}
+        onNotifications={() => setModal('notifications')}
+      />
+      <main className="app-content" id="main-content">
+        {tab === 'home' && (
+          <HomeScreen
+            state={state}
+            openLook={openLook}
+            openMoodboard={() => setModal('moodboard')}
+            showAll={() => setTab('discover')}
+            sendPrompt={text => {
+              update(current => ({
+                ...current,
+                chat: [
+                  ...current.chat,
+                  { id: makeId(), role: 'user', text },
+                  {
+                    id: makeId(),
+                    role: 'assistant',
+                    text: `I used ${current.profile.styles.join(' and ')} to build three directions for you.`,
+                    lookIds: ['soft-street', 'quiet-luxury', 'modern-workwear'],
                   },
-                }))}
-                key={option}
-              >
-                <FashionTile variant={`${user.profile.gender}-${option}`} />
-                <span>{option}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+                ],
+              }));
+              notify('Three looks are ready.');
+            }}
+          />
+        )}
+        {tab === 'tryon' && (
+          <TryOnScreen
+            look={selectedLook}
+            savedLooks={savedLooks}
+            isSaved={state.savedLookIds.includes(selectedLook.id)}
+            openLook={openLook}
+            tryNew={() => setModal('upload')}
+            shop={() => setModal('product')}
+            save={() => toggleSave()}
+            challenge={() => setModal('challenge')}
+            share={() => setModal('share')}
+          />
+        )}
+        {tab === 'discover' && (
+          <DiscoverScreen
+            query={query}
+            setQuery={setQuery}
+            mode={discoverMode}
+            setMode={setDiscoverMode}
+            savedIds={state.savedLookIds}
+            openLook={openLook}
+            toggleSave={toggleSave}
+            openDetails={lookId => {
+              setSelectedLookId(lookId);
+              setModal('product');
+            }}
+            notify={notify}
+          />
+        )}
+      </main>
+      <TabBar tab={tab} setTab={setTab} />
+
+      {modal === 'drawer' && (
+        <Drawer
+          profileName={state.profile.fullName}
+          onClose={() => setModal(null)}
+          onProfile={() => setModal('profile')}
+          onHistory={() => {
+            setModal(null);
+            setTab('tryon');
+            notify('Showing your latest try-on.');
+          }}
+          logout={logout}
+          notify={notify}
+        />
       )}
-      <button className="primary-btn bottom-action setup-next" data-testid="setup-continue" onClick={next}>Next</button>
+      {modal === 'notifications' && (
+        <Modal title="Notifications" onClose={() => setModal(null)}>
+          <div className="notification-list">
+            <NotificationItem title="Your gallery look is ready" detail="Soft Street was tailored to your saved fit." />
+            <NotificationItem title="Three new ideas for you" detail="Fresh neutral layers landed in Discover." />
+          </div>
+          <button className="button secondary full" onClick={() => { setModal(null); notify('All notifications marked as read.'); }}>
+            <Check size={19} weight="bold" /> Mark all as read
+          </button>
+        </Modal>
+      )}
+      {modal === 'moodboard' && (
+        <MoodboardModal
+          onClose={() => setModal(null)}
+          onCreate={() => {
+            setModal(null);
+            openLook('soft-street');
+            notify('Moodboard analyzed. Your looks are ready.');
+          }}
+        />
+      )}
+      {modal === 'product' && (
+        <ProductModal
+          look={selectedLook}
+          onClose={() => setModal(null)}
+          onSave={() => toggleSave()}
+          onShop={() => {
+            setModal(null);
+            update(current => ({
+              ...current,
+              tryOnHistory: Array.from(new Set([selectedLook.id, ...current.tryOnHistory])),
+            }));
+            notify('Shopping list prepared. Product links connect when APIs are added.');
+          }}
+        />
+      )}
+      {modal === 'challenge' && (
+        <ChallengeModal
+          look={selectedLook}
+          onClose={() => setModal(null)}
+          onCreate={() => {
+            setModal('share');
+            notify('Challenge card created.');
+          }}
+        />
+      )}
+      {modal === 'share' && (
+        <ShareModal
+          look={selectedLook}
+          onClose={() => setModal(null)}
+          notify={notify}
+          openReel={() => setModal('reel')}
+        />
+      )}
+      {modal === 'reel' && (
+        <ReelModal
+          look={selectedLook}
+          onClose={() => setModal(null)}
+          onSave={() => { setModal(null); notify('Reel saved to your device.'); }}
+        />
+      )}
+      {modal === 'upload' && (
+        <UploadModal
+          onClose={() => setModal(null)}
+          onContinue={() => {
+            setModal(null);
+            openLook('quiet-luxury');
+            notify('New try-on generated from your reference.');
+          }}
+        />
+      )}
+      {modal === 'profile' && (
+        <ProfileModal
+          profile={state.profile}
+          savedCount={state.savedLookIds.length}
+          onClose={() => setModal(null)}
+          onSave={profile => {
+            update(current => ({ ...current, profile }));
+            setModal(null);
+            notify('Profile changes saved.');
+          }}
+        />
+      )}
+      <Toast message={toast} />
+    </AppFrame>
+  );
+}
+
+function AppFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="page-stage">
+      <section className="app-shell mobile-prototype" aria-label="Myuze mobile app">
+        {children}
+      </section>
+      <aside className="desktop-note" aria-hidden="true">
+        <span>MYUZE</span>
+        <h1>Dress for what is next.</h1>
+        <p>Your personal AI stylist for looks worth wearing—and sharing.</p>
+      </aside>
     </div>
   );
 }
 
-function styleOptions(gender: 'Female' | 'Male') {
-  return gender === 'Female'
-    ? ['Minimal', 'Casual', 'Office', 'Vintage', 'Athleisure', 'Bohemian']
-    : ['Streetwear', 'Casual', 'Workwear', 'Business Casual', 'Classic', 'Minimal'];
-}
-
-function AppHeader({ tenant, user, onSwitch, onNotify }: {
-  tenant: Tenant;
-  user: TenantUser;
-  onSwitch: () => void;
-  onNotify: () => void;
-}) {
+function Header({ onMenu, onNotifications }: { onMenu: () => void; onNotifications: () => void }) {
   return (
     <header className="app-header">
-      <button className="icon-btn" data-testid="hamburger-menu" aria-label="Open menu" onClick={onSwitch}>☰</button>
-      <BrandMark />
-      <button className="icon-btn" aria-label="Notifications" onClick={onNotify}>⌁</button>
-      <button className="tenant-chip" onClick={onSwitch}>{tenant.name} · {user.name.split(' ')[0]}</button>
+      <IconButton label="Open menu" onClick={onMenu}><List /></IconButton>
+      <img className="wordmark" src={myuzeLogo} alt="Myuze" />
+      <IconButton label="Open notifications" onClick={onNotifications}><Bell /></IconButton>
     </header>
   );
 }
 
-function HomeScreen({ user, chatInput, setChatInput, sendChat, openMoodboard, openLook }: {
-  user: TenantUser;
-  chatInput: string;
-  setChatInput: (value: string) => void;
-  sendChat: (text?: string) => void;
-  openMoodboard: () => void;
-  openLook: (lookId: string) => void;
+function IconButton({ label, onClick, children, className = '' }: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
 }) {
-  const isEmptyState = user.chat.length <= 1;
+  return <button type="button" className={`icon-button ${className}`} aria-label={label} title={label} onClick={onClick}>{children}</button>;
+}
 
-  return (
-    <section className="home-screen">
-      <div className="home-hero">
-        <div className="sparkle-logo"><img src={myuzeLogo} alt="Myuze" /></div>
-        <h2>Hi there 👋</h2>
-        <p>Ask Myuze for outfit ideas — I'll get to know your style as we chat.</p>
-      </div>
-      <div className="quick-grid">
-        {['Style me for a first date', "What's trending this week?", 'Pack for a beach trip'].map(prompt => (
-          <button key={prompt} onClick={() => sendChat(prompt)}>{prompt}</button>
-        ))}
-      </div>
-      {isEmptyState ? (
-        <section className="trending-looks" aria-label="Trending looks">
-          <div className="section-row">
-            <h3>Trending looks</h3>
-            <button type="button">See all</button>
-          </div>
-          <div className="trending-row">
-            {looks.map(look => (
-              <button className="trending-card" key={look.id} onClick={() => openLook(look.id)}>
-                <FashionTile variant={look.image} />
-                <strong>Try Now</strong>
-              </button>
-            ))}
+function AuthScreen({ view, setView, onComplete, notify }: {
+  view: AuthView;
+  setView: (view: AuthView) => void;
+  onComplete: () => void;
+  notify: (message: string) => void;
+}) {
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const slides = [
+    { image: dinnerWithFriends, title: 'Dinner with friends', detail: 'Smart casual', alt: 'Woman in a beige blazer and jeans walking through the city' },
+    { image: brunchDate, title: 'Brunch date', detail: 'Relaxed and chic', alt: 'Woman in an ivory outfit on stone steps' },
+    { image: weekendGetaway, title: 'Weekend getaway', detail: 'Laid-back layers', alt: 'Man in a navy blazer and neutral trousers' },
+    { image: workPresentation, title: 'Work presentation', detail: 'Polished and confident', alt: 'Woman in a tailored neutral office look' },
+  ];
+
+  const continueWithEmail = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.includes('@')) { notify('Enter a valid email address.'); return; }
+    setView('otp');
+    notify('Your preview code is 2468.');
+  };
+
+  if (view === 'waitlist') {
+    return (
+      <div className="public-homepage">
+        <header className="public-nav">
+          <img src={myuzeLogo} alt="Myuze" />
+          <nav aria-label="Homepage navigation">
+            <a href="#how-it-works">How it works</a>
+            <a href="#style-stories">Explore looks</a>
+            <button type="button" onClick={() => setView('signin')}>Sign in</button>
+          </nav>
+        </header>
+
+        <main className="public-hero">
+          <section className="public-copy" aria-labelledby="public-title">
+            <span className="eyebrow">AI PERSONAL STYLIST</span>
+            <h1 id="public-title">Find the look that feels like you.</h1>
+            <p>Myuze styles complete outfits for your real plans—so getting dressed feels effortless.</p>
+            <form className="public-auth-form" onSubmit={continueWithEmail} noValidate>
+              <button className="google-button" type="button" onClick={() => {
+                notify('Google sign-in is running in preview mode.');
+                onComplete();
+              }}><img src={googleLogo} alt="" /> Continue with Google</button>
+              <div className="auth-divider"><span>OR</span></div>
+              <label htmlFor="homepage-email">Email</label>
+              <input id="homepage-email" type="email" autoComplete="email" placeholder="Enter your email" value={email} onChange={event => setEmail(event.target.value)} />
+              <button className="button primary full" type="submit">Continue with email</button>
+            </form>
+            <p className="member-prompt">Already a member? <button type="button" onClick={() => setView('signin')}>Sign in</button></p>
+            <p className="free-note"><ShieldCheck weight="bold" /> Free to start. No credit card required.</p>
+          </section>
+
+          <section className="style-stories" id="style-stories" aria-label="Style inspiration slideshow">
+            <article className="active-story">
+              <img src={slides[activeSlide].image} alt={slides[activeSlide].alt} />
+              <span className="styled-label"><Sparkle weight="fill" /> Styled by Myuze</span>
+              <div className="story-caption"><strong>{slides[activeSlide].title}</strong><span>{slides[activeSlide].detail}</span></div>
+              <button className="story-arrow previous" type="button" aria-label="Previous style story" onClick={() => setActiveSlide(current => (current + slides.length - 1) % slides.length)}><CaretLeft weight="bold" /></button>
+              <button className="story-arrow next" type="button" aria-label="Next style story" onClick={() => setActiveSlide(current => (current + 1) % slides.length)}><CaretRight weight="bold" /></button>
+              <div className="story-dots" aria-label={`Slide ${activeSlide + 1} of ${slides.length}`}>
+                {slides.map((slide, index) => <button key={slide.title} type="button" aria-label={`Show ${slide.title}`} aria-pressed={index === activeSlide} onClick={() => setActiveSlide(index)} />)}
+              </div>
+            </article>
+            <div className="story-rail">
+              {slides.filter((_, index) => index !== activeSlide).slice(0, 3).map(slide => {
+                const index = slides.findIndex(item => item.title === slide.title);
+                return <button className="story-preview-card" type="button" key={slide.title} onClick={() => setActiveSlide(index)}>
+                  <img src={slide.image} alt="" />
+                  <span><strong>{slide.title}</strong><small>{slide.detail}</small></span>
+                </button>;
+              })}
+            </div>
+          </section>
+        </main>
+
+        <section className="how-it-works" id="how-it-works" aria-labelledby="how-title">
+          <h2 id="how-title">From occasion to outfit in seconds</h2>
+          <div>
+            <article><span>1</span><strong>Tell us your plan</strong><p>Share the occasion, location, and mood.</p></article>
+            <article><span>2</span><strong>Get your look</strong><p>Myuze builds complete outfits around you.</p></article>
+            <article><span>3</span><strong>Save and wear</strong><p>Keep favorites and get dressed with confidence.</p></article>
           </div>
         </section>
+      </div>
+    );
+  }
+
+  return (
+    <section className="public-auth-page">
+      <div className="auth-screen">
+      <button className="back-link" type="button" onClick={() => setView('waitlist')}><ArrowLeft /> Back</button>
+      <img className="auth-logo" src={myuzeLogo} alt="Myuze" />
+      {view === 'signin' ? (
+        <form className="auth-form" onSubmit={event => {
+          event.preventDefault();
+          if (!email.includes('@')) { notify('Enter a valid email address.'); return; }
+          setView('otp');
+          notify('Your preview code is 2468.');
+        }}>
+          <span className="eyebrow">WELCOME BACK</span>
+          <h1>Sign in to your style.</h1>
+          <p>We will send a one-time code. No password needed.</p>
+          <label htmlFor="signin-email">Email address</label>
+          <div className="input-with-icon"><Envelope /><input id="signin-email" type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@email.com" /></div>
+          <button className="button primary full" type="submit">Continue with email</button>
+        </form>
       ) : (
-        <div className="chat-list">
-          {user.chat.map(message => (
-            <article className={`chat-bubble ${message.role}`} key={message.id}>
-              <p>{message.text}</p>
-              {message.lookIds && (
-                <div className="mini-look-row">
-                  {message.lookIds.map(id => {
-                    const look = looks.find(item => item.id === id)!;
-                    return (
-                      <button key={id} onClick={() => openLook(id)}>
-                        <FashionTile variant={look.image} />
-                        <span>{look.title}</span>
-                        <strong>Try Now</strong>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+        <form className="auth-form" onSubmit={event => {
+          event.preventDefault();
+          if (otp !== '2468') { notify('Use preview code 2468.'); return; }
+          onComplete();
+        }}>
+          <span className="eyebrow">CHECK YOUR EMAIL</span>
+          <h1>Enter your code.</h1>
+          <p>For this prototype, use <strong>2468</strong>.</p>
+          <label htmlFor="otp-code">Four-digit code</label>
+          <input id="otp-code" className="otp-input" inputMode="numeric" maxLength={4} value={otp} onChange={event => setOtp(event.target.value.replace(/\D/g, ''))} placeholder="0000" />
+          <button className="button primary full" type="submit">Verify and continue</button>
+          <button className="text-action" type="button" onClick={() => notify('A new preview code was sent: 2468.')}>Resend code</button>
+        </form>
+      )}
+      </div>
+    </section>
+  );
+}
+
+function Onboarding({ profile, updateProfile, onComplete }: {
+  profile: typeof initialState.profile;
+  updateProfile: (profile: typeof initialState.profile) => void;
+  onComplete: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  return (
+    <section className="onboarding-screen">
+      <div className="onboarding-top">
+        <img src={myuzeLogo} alt="Myuze" />
+        <span>{step + 1} / 2</span>
+      </div>
+      <div className="progress-track"><span style={{ width: `${(step + 1) * 50}%` }} /></div>
+      {step === 0 ? (
+        <div className="onboarding-body">
+          <span className="eyebrow">LET'S START WITH YOU</span>
+          <h1>Make every suggestion fit.</h1>
+          <p>These details stay in your style profile and can be changed anytime.</p>
+          <label htmlFor="profile-name">Name</label>
+          <input id="profile-name" value={profile.fullName} onChange={event => updateProfile({ ...profile, fullName: event.target.value })} />
+          <div className="field-pair">
+            <label>Style profile<select value={profile.gender} onChange={event => updateProfile({ ...profile, gender: event.target.value as 'Female' | 'Male' })}><option>Female</option><option>Male</option></select></label>
+            <label>Usual size<select value={profile.size} onChange={event => updateProfile({ ...profile, size: event.target.value })}>{['XS', 'S', 'M', 'L', 'XL'].map(size => <option key={size}>{size}</option>)}</select></label>
+          </div>
+        </div>
+      ) : (
+        <div className="onboarding-body">
+          <span className="eyebrow">YOUR VISUAL LANGUAGE</span>
+          <h1>What feels like you?</h1>
+          <p>Choose at least two. Myuze will keep learning from what you save and skip.</p>
+          <div className="style-choice-grid">
+            {styleOptions.map(style => {
+              const active = profile.styles.includes(style);
+              return <button className={active ? 'style-choice active' : 'style-choice'} type="button" aria-pressed={active} onClick={() => updateProfile({ ...profile, styles: active ? profile.styles.filter(item => item !== style) : [...profile.styles, style] })} key={style}>{active && <Check weight="bold" />} {style}</button>;
+            })}
+          </div>
+        </div>
+      )}
+      <button className="button primary full onboarding-next" type="button" onClick={() => step === 0 ? setStep(1) : onComplete()} disabled={step === 1 && profile.styles.length < 2}>{step === 0 ? 'Continue' : 'Finish profile'}</button>
+    </section>
+  );
+}
+
+function HomeScreen({ state, openLook, openMoodboard, showAll, sendPrompt }: {
+  state: typeof initialState;
+  openLook: (lookId: string) => void;
+  openMoodboard: () => void;
+  showAll: () => void;
+  sendPrompt: (text: string) => void;
+}) {
+  const [message, setMessage] = useState('');
+  const latest = state.chat.slice(-3);
+  return (
+    <section className="screen home-screen">
+      <span className="eyebrow">PERSONAL STYLIST</span>
+      <h1>What are you dressing for?</h1>
+      <div className="prompt-row">
+        {['Gallery opening', 'First date', 'Weekend away'].map(prompt => <button type="button" onClick={() => sendPrompt(`Style me for a ${prompt.toLowerCase()}.`)} key={prompt}>{prompt}</button>)}
+      </div>
+      {state.chat.length === 1 ? (
+        <div className="feature-look">
+          <img src={looks[0].image} alt="Soft Street gallery opening outfit" />
+          <div><span>CURATED FOR YOU</span><h2>Soft Street</h2><p>A gallery-ready mix of ease and structure.</p><button type="button" onClick={() => openLook('soft-street')}>Try this look</button></div>
+        </div>
+      ) : (
+        <div className="conversation" aria-live="polite">
+          {latest.map(item => <article className={item.role} key={item.id}><p>{item.text}</p>{item.lookIds && <div className="chat-look-row">{item.lookIds.map(id => { const look = looks.find(entry => entry.id === id)!; return <button type="button" onClick={() => openLook(id)} key={id}><img src={look.image} alt="" /><span>{look.title}</span></button>; })}</div>}</article>)}
+        </div>
+      )}
+      <div className="section-heading"><div><span className="eyebrow">FRESH IDEAS</span><h2>Trending for you</h2></div><button type="button" onClick={showAll}>See all</button></div>
+      <div className="horizontal-looks">{looks.slice(1, 5).map(look => <button type="button" onClick={() => openLook(look.id)} key={look.id}><img src={look.image} alt={`${look.title} outfit`} /><strong>{look.title}</strong><span>{look.tags[0]}</span></button>)}</div>
+      <form className="composer" onSubmit={event => { event.preventDefault(); if (!message.trim()) return; sendPrompt(message); setMessage(''); }}>
+        <IconButton label="Add a moodboard or image" onClick={openMoodboard}><Plus /></IconButton>
+        <label className="sr-only" htmlFor="stylist-message">Ask Myuze</label>
+        <input id="stylist-message" value={message} onChange={event => setMessage(event.target.value)} placeholder="Ask Myuze anything…" />
+        <button type="submit" className="send-button" aria-label="Send message"><ArrowUp weight="bold" /></button>
+      </form>
+    </section>
+  );
+}
+
+function TryOnScreen({ look, savedLooks, isSaved, openLook, tryNew, shop, save, challenge, share }: {
+  look: Look;
+  savedLooks: Look[];
+  isSaved: boolean;
+  openLook: (id: string) => void;
+  tryNew: () => void;
+  shop: () => void;
+  save: () => void;
+  challenge: () => void;
+  share: () => void;
+}) {
+  const railLooks = [...savedLooks, ...looks.filter(item => !savedLooks.some(saved => saved.id === item.id))].slice(0, 4);
+  return (
+    <section className="screen tryon-screen">
+      <h1>{look.occasion}</h1>
+      <div className="result-layout">
+        <img className="result-image" src={look.image} alt={`${look.title}: ${look.rationale}`} />
+        <aside className="saved-rail" aria-label="Saved looks">
+          <span>Saved looks</span>
+          {railLooks.map(item => <button type="button" className={item.id === look.id ? 'active' : ''} aria-label={`Open ${item.title}`} onClick={() => openLook(item.id)} key={item.id}><img src={item.image} alt="" /></button>)}
+          <button type="button" className="try-new" onClick={tryNew}><Plus /><span>Try new<br />look</span></button>
+        </aside>
+      </div>
+      <div className="look-summary">
+        <div><h2>{look.title}</h2><p>{look.rationale}</p></div>
+        <span className="ai-badge">AI <Sparkle weight="fill" /></span>
+      </div>
+      <button className="button primary shop-button" type="button" onClick={shop}><ShoppingBag weight="bold" /> Shop the look</button>
+      <div className="result-actions">
+        <button type="button" aria-pressed={isSaved} onClick={save}><BookmarkSimple weight={isSaved ? 'fill' : 'regular'} /><span>{isSaved ? 'Saved' : 'Save'}</span></button>
+        <button type="button" onClick={challenge}><Sword /><span>Challenge</span></button>
+        <button type="button" onClick={share}><ShareNetwork /><span>Share</span></button>
+      </div>
+    </section>
+  );
+}
+
+function DiscoverScreen({ query, setQuery, mode, setMode, savedIds, openLook, toggleSave, openDetails, notify }: {
+  query: string;
+  setQuery: (query: string) => void;
+  mode: 'For you' | 'Trending' | 'Following';
+  setMode: (mode: 'For you' | 'Trending' | 'Following') => void;
+  savedIds: string[];
+  openLook: (id: string) => void;
+  toggleSave: (id: string) => void;
+  openDetails: (id: string) => void;
+  notify: (message: string) => void;
+}) {
+  const filtered = useMemo(() => looks.filter(look => `${look.title} ${look.tags.join(' ')}`.toLowerCase().includes(query.toLowerCase())), [query]);
+  return (
+    <section className="screen discover-screen">
+      <span className="eyebrow">VISUAL DISCOVERY</span>
+      <h1>Find your next look.</h1>
+      <div className="search-box"><MagnifyingGlass /><label className="sr-only" htmlFor="discover-search">Search looks</label><input id="discover-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search style, occasion, or vibe" />{query && <button type="button" aria-label="Clear search" onClick={() => setQuery('')}><X /></button>}</div>
+      <div className="segment-control" aria-label="Discover feed">
+        {(['For you', 'Trending', 'Following'] as const).map(item => <button type="button" className={mode === item ? 'active' : ''} aria-pressed={mode === item} onClick={() => setMode(item)} key={item}>{item}</button>)}
+      </div>
+      {filtered.length ? (
+        <div className="masonry-grid">
+          {filtered.map((look, index) => (
+            <article className={index % 3 === 1 ? 'look-card tall' : 'look-card'} key={look.id}>
+              <button className="look-image-button" type="button" onClick={() => openLook(look.id)}><img src={look.image} alt={`${look.title} outfit`} /></button>
+              <IconButton label={savedIds.includes(look.id) ? `Remove ${look.title} from saved` : `Save ${look.title}`} onClick={() => toggleSave(look.id)} className="floating-save"><BookmarkSimple weight={savedIds.includes(look.id) ? 'fill' : 'regular'} /></IconButton>
+              <div className="look-card-copy"><button type="button" onClick={() => openDetails(look.id)}><strong>{look.title}</strong><span>{look.creator}</span></button><IconButton label={`More options for ${look.title}`} onClick={() => notify(`${look.title} options opened.`)}><DotsThree weight="bold" /></IconButton></div>
             </article>
           ))}
         </div>
-      )}
-      <Composer value={chatInput} setValue={setChatInput} onSend={() => sendChat()} onPlus={openMoodboard} />
+      ) : <div className="empty-state"><MagnifyingGlass /><h2>No looks yet</h2><p>Try a broader search, like “minimal” or “gallery.”</p><button className="button secondary" type="button" onClick={() => setQuery('')}>Clear search</button></div>}
     </section>
   );
 }
 
-function DiscoverScreen({ openLook, openProduct }: {
-  openLook: (lookId: string) => void;
-  openProduct: (lookId: string) => void;
-}) {
-  const [segment, setSegment] = useState('For You');
+function TabBar({ tab, setTab }: { tab: TabId; setTab: (tab: TabId) => void }) {
+  const items: Array<{ id: TabId; label: string; icon: React.ReactNode }> = [
+    { id: 'home', label: 'Home', icon: <House /> },
+    { id: 'tryon', label: 'Try On', icon: <Sparkle weight="fill" /> },
+    { id: 'discover', label: 'Discover', icon: <MagnifyingGlass /> },
+  ];
   return (
-    <section className="discover-screen">
-      <div className="search-row">
-        <button className="filter-btn">≋</button>
-        <input placeholder="Search" />
-        <button className="filter-btn">⌕</button>
-      </div>
-      <div className="segments">
-        {['For You', 'Trending', 'Following'].map(item => <button className={segment === item ? 'active' : ''} onClick={() => setSegment(item)} key={item}>{item}</button>)}
-      </div>
-      <div className={segment === 'Following' ? 'following-feed' : 'discover-grid'}>
-        {looks.concat(looks.slice(0, 2)).map((look, index) => segment === 'Following' ? (
-          <article className="following-card" key={`${look.id}-${index}`}>
-            <Avatar name={['Kellyyy_33', 'Stevee_', 'Mari_e_1'][index % 3]} index={index} />
-            <div>
-              <strong>{look.title}</strong>
-              <p>{look.vibe}</p>
-              <button onClick={() => openLook(look.id)}>Try Now</button>
-            </div>
-            <FashionTile variant={look.image} />
-          </article>
-        ) : (
-          <article className="discover-card" key={`${look.id}-${index}`}>
-            <button className="more">•••</button>
-            <FashionTile variant={look.image} />
-            <div>
-              <button onClick={() => openLook(look.id)}>Try Now</button>
-              <button onClick={() => openProduct(look.id)}>Details</button>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
+    <nav className="tab-bar" aria-label="Primary navigation">
+      {items.map(item => <button type="button" className={tab === item.id ? 'active' : ''} aria-current={tab === item.id ? 'page' : undefined} onClick={() => setTab(item.id)} data-testid={`tab-${item.id}`} key={item.id}>{item.icon}<span>{item.label}</span></button>)}
+    </nav>
   );
 }
 
-function ProductDetail({ look, onTry }: { look: Look; onTry: () => void }) {
-  return (
-    <section className="product-screen">
-      <FashionHero look={look} />
-      <div className="thumbnail-row">{looks.map(item => <button key={item.id}><FashionTile variant={item.image} /></button>)}</div>
-      <h2>Men's Oversized Cotton Crewneck Tee</h2>
-      <h3>USD $39.99</h3>
-      <p><strong>Type:</strong> Cotton</p>
-      <div className="swatches">{look.palette.map(color => <span style={{ background: color }} key={color} />)}</div>
-      <button className="soft-banner" onClick={onTry}>✦ Try On Look</button>
-      <button className="primary-btn">Shop Now</button>
-    </section>
-  );
-}
-
-function TryOnScreen({ look, historyIds, openLook, onChallenge, onShare, onReel, saveTryOn }: {
-  look: Look;
-  historyIds: string[];
-  openLook: (lookId: string) => void;
-  onChallenge: () => void;
-  onShare: () => void;
-  onReel: () => void;
-  saveTryOn: () => void;
-}) {
-  return (
-    <section className="tryon-screen">
-      <div className="screen-title">
-        <h2>Try On</h2>
-        <button onClick={onShare}>⌯</button>
-      </div>
-      <div className="tryon-card">
-        <FashionHero look={look} />
-      </div>
-      <div className="thumbnail-row">{looks.map(item => <button onClick={() => openLook(item.id)} className={item.id === look.id ? 'active' : ''} key={item.id}><FashionTile variant={item.image} /></button>)}</div>
-      <div className="action-grid">
-        <button className="outline-btn" onClick={onChallenge}>Challenge</button>
-        <button className="outline-btn" onClick={onReel}>Create Reel</button>
-        <button className="primary-btn wide" onClick={saveTryOn}>Shop Now</button>
-      </div>
-      <h3>Try on history</h3>
-      <div className="history-grid">
-        {historyIds.map(id => {
-          const item = looks.find(lookItem => lookItem.id === id) ?? looks[0];
-          return <button onClick={() => openLook(item.id)} key={id}><FashionTile variant={item.image} /><span>{item.title}</span></button>;
-        })}
-      </div>
-    </section>
-  );
-}
-
-function ProfileScreen({ user, view, setView, updateUser, setTab, openLook, onLogout }: {
-  user: TenantUser;
-  view: ProfileView;
-  setView: (view: ProfileView) => void;
-  updateUser: (updater: (user: TenantUser) => TenantUser) => void;
-  setTab: (tab: Tab) => void;
-  openLook: (lookId: string, nextTab?: Tab) => void;
-  onLogout: () => void;
-}) {
-  if (view === 'edit') {
-    return (
-      <section className="profile-screen">
-        <ProfileSubheader title="Edit Profile" onBack={() => setView('menu')} />
-        <div className="profile-card compact">
-          <Avatar name={user.name} />
-          <div><h2>{user.profile.fullName}</h2><p>{user.email}</p></div>
-        </div>
-        <label>Full name<input value={user.profile.fullName} onChange={event => updateUser(current => ({ ...current, name: event.target.value || current.name, profile: { ...current.profile, fullName: event.target.value } }))} /></label>
-        <label>Email<input value={user.email} readOnly /></label>
-        <button className="primary-btn" onClick={() => setView('menu')}>Save profile</button>
-      </section>
-    );
-  }
-
-  if (view === 'fit') {
-    return (
-      <section className="profile-screen">
-        <ProfileSubheader title="Fit Preferences" onBack={() => setView('menu')} />
-        <div className="preference-summary">
-          <strong>{user.profile.gender}</strong>
-          <span>{user.profile.skinTone} skin tone · Size {user.profile.size}</span>
-        </div>
-        <div className="setup-control-group">
-          <span>Gender</span>
-          <div className="gender-options">
-            {(['Male', 'Female'] as const).map(gender => (
-              <button
-                className={user.profile.gender === gender ? 'active' : ''}
-                type="button"
-                onClick={() => updateUser(current => ({
-                  ...current,
-                  profile: {
-                    ...current.profile,
-                    gender,
-                    styles: current.profile.styles.filter(style => styleOptions(gender).includes(style)).length
-                      ? current.profile.styles.filter(style => styleOptions(gender).includes(style))
-                      : styleOptions(gender).slice(0, 1),
-                  },
-                }))}
-                key={gender}
-              >
-                <i />{gender}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="field-grid">
-          <label>Skin Tone
-            <select value={user.profile.skinTone} onChange={event => updateUser(current => ({ ...current, profile: { ...current.profile, skinTone: event.target.value } }))}>
-              {['Yellow', 'Fair', 'Medium', 'Olive', 'Deep'].map(tone => <option key={tone}>{tone}</option>)}
-            </select>
-          </label>
-          <label>Size
-            <select value={user.profile.size} onChange={event => updateUser(current => ({ ...current, profile: { ...current.profile, size: event.target.value } }))}>
-              {['XS', 'S', 'M', 'L', 'XL'].map(size => <option key={size}>{size}</option>)}
-            </select>
-          </label>
-        </div>
-        <h3>Style Preferences</h3>
-        <div className="style-grid preference-style-grid">
-          {styleOptions(user.profile.gender).map(option => (
-            <button
-              className={user.profile.styles.includes(option) ? 'style-card selected' : 'style-card'}
-              onClick={() => updateUser(current => ({
-                ...current,
-                profile: {
-                  ...current.profile,
-                  styles: current.profile.styles.includes(option)
-                    ? current.profile.styles.filter(item => item !== option)
-                    : [...current.profile.styles, option],
-                },
-              }))}
-              key={option}
-            >
-              <FashionTile variant={`${user.profile.gender}-${option}`} />
-              <span>{option}</span>
-            </button>
-          ))}
-        </div>
-        <button className="primary-btn" onClick={() => setView('menu')}>Save preferences</button>
-      </section>
-    );
-  }
-
-  if (view === 'history') {
-    return (
-      <section className="profile-screen">
-        <ProfileSubheader title="Try-on History" onBack={() => setView('menu')} />
-        <div className="profile-history-grid">
-          {user.tryOnHistory.map(id => {
-            const look = looks.find(item => item.id === id) ?? looks[0];
-            return (
-              <button key={id} onClick={() => openLook(look.id)}>
-                <FashionTile variant={look.image} />
-                <span><strong>{look.title}</strong><small>{look.vibe}</small></span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-    );
-  }
-
-  if (view === 'privacy' || view === 'help') {
-    const isPrivacy = view === 'privacy';
-    return (
-      <section className="profile-screen">
-        <ProfileSubheader title={isPrivacy ? 'Privacy Policy' : 'Help & Support'} onBack={() => setView('menu')} />
-        <div className="info-panel">
-          <h3>{isPrivacy ? 'Your style memory stays scoped to you.' : 'How can we help?'}</h3>
-          <p>{isPrivacy
-            ? 'This prototype keeps profile details, style choices, chat memory, try-ons, and polls scoped to the active Myuze user. Future backend reads and writes should enforce the same user and tenant boundaries.'
-            : 'For now, this prototype supports the core styling flow: chat for looks, try them on, share challenges, and edit your profile preferences from this menu.'}</p>
-          <button className="outline-btn" onClick={() => setView('menu')}>Back to settings</button>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="profile-screen">
-      <div className="profile-card">
-        <Avatar name={user.name} />
-        <div><h2>{user.profile.fullName}</h2><button onClick={() => setView('edit')}>Edit Profile</button></div>
-      </div>
-      <button className="settings-row" data-testid="fit-preferences-row" onClick={() => setView('fit')}>♡ <span>Fit Preferences</span><b>›</b></button>
-      <button className="settings-row" onClick={() => setView('history')}>◷ <span>Try-on History</span><b>›</b></button>
-      <button className="settings-row" onClick={() => setView('privacy')}>◇ <span>Privacy Policy</span><b>›</b></button>
-      <button className="settings-row" onClick={() => setView('help')}>? <span>Help & Support</span><b>›</b></button>
-      <button className="logout-btn" onClick={onLogout}>Log Out</button>
-    </section>
-  );
-}
-
-function ProfileSubheader({ title, onBack }: { title: string; onBack: () => void }) {
-  return (
-    <div className="profile-subheader">
-      <button aria-label="Back to profile menu" onClick={onBack}>‹</button>
-      <h2>{title}</h2>
-      <span />
-    </div>
-  );
-}
-
-function Composer({ value, setValue, onSend, onPlus }: {
-  value: string;
-  setValue: (value: string) => void;
-  onSend: () => void;
-  onPlus: () => void;
-}) {
-  return (
-    <div className="composer">
-      <button onClick={onPlus}>＋</button>
-      <input value={value} onChange={event => setValue(event.target.value)} onKeyDown={event => event.key === 'Enter' && onSend()} placeholder="Ask me anything..." />
-      <button onClick={onSend}>↑</button>
-    </div>
-  );
-}
-
-function MoodboardSheet({ onClose, onCreate }: { onClose: () => void; onCreate: () => void }) {
-  return (
-    <BottomSheet title="New Moodboard" onClose={onClose}>
-      <div className="collage">
-        {['street', 'weekend', 'work', 'rooftop', 'minimal', 'sage'].map(item => <FashionTile variant={item} key={item} />)}
-      </div>
-      <button className="sheet-action" onClick={onCreate}><strong>Create 3 looks</strong><span>AI outfit generator with your profile</span></button>
-      <button className="sheet-action"><strong>Try this on me</strong><span>Use a garment or product screenshot</span></button>
-      <button className="sheet-action"><strong>Find similar pieces</strong><span>Shape matching items for shopping</span></button>
-    </BottomSheet>
-  );
-}
-
-function ChallengeSheet({ onClose, onPoll, onShare }: { onClose: () => void; onPoll: () => void; onShare: () => void }) {
-  return (
-    <BottomSheet title="Style Challenge" onClose={onClose}>
-      <button className="outline-btn" onClick={onPoll}>Who Wore It Better?</button>
-      <button className="outline-btn">Style This Item</button>
-      <button className="outline-btn" onClick={onPoll}>Outfit Battle</button>
-      <div className="sheet-footer"><button className="text-btn" onClick={onClose}>Cancel</button><button className="primary-btn" onClick={onShare}>Share</button></div>
-    </BottomSheet>
-  );
-}
-
-function ShareSheet({ look, onClose, onCopy }: { look: Look; onClose: () => void; onCopy: () => void }) {
-  return (
-    <BottomSheet title="Share" onClose={onClose}>
-      <div className="share-preview"><FashionTile variant={look.image} /><div><strong>{look.title}</strong><span>Made with Myuze</span></div></div>
-      <div className="share-icons">
-        {['Save', 'FB', 'IG', 'WA', 'Snap', 'Pin', 'More'].map(item => <button onClick={item === 'More' ? onCopy : undefined} key={item}>{item}</button>)}
-      </div>
-    </BottomSheet>
-  );
-}
-
-function ReelSheet({ look, onClose, onSave }: { look: Look; onClose: () => void; onSave: () => void }) {
-  const [preview, setPreview] = useState(false);
-  return (
-    <BottomSheet title={preview ? 'Reel Preview' : 'Create Reel'} onClose={onClose}>
-      <div className="reel-card">
-        <FashionHero look={look} />
-        {preview && <div className="play">▶<span>0:05 / 0:15</span></div>}
-      </div>
-      <div className="segments compact">{['Clean', 'Elegant', 'Playful'].map(item => <button key={item}>{item}</button>)}</div>
-      <button className="primary-btn" onClick={() => preview ? onSave() : setPreview(true)}>{preview ? 'Save Reel' : 'Create Reel'}</button>
-      <button className="outline-btn">Challenge</button>
-    </BottomSheet>
-  );
-}
-
-function PollSheet({ user, onClose, onTry }: { user: TenantUser; onClose: () => void; onTry: () => void }) {
-  const poll = user.polls[0] ?? { question: `Help ${user.name.split(' ')[0]} pick a fit`, lookIds: ['soft-street', 'rooftop-casual'], votes: { 'soft-street': 63, 'rooftop-casual': 37 } };
-  return (
-    <BottomSheet title="Public Fit Poll" onClose={onClose}>
-      <h3>{poll.question}</h3>
-      <div className="poll-grid">
-        {poll.lookIds.map(id => {
-          const look = looks.find(item => item.id === id) ?? looks[0];
-          return (
-            <button key={id}>
-              <FashionTile variant={look.image} />
-              <strong>{look.title}</strong>
-              <div className="vote-bar"><span style={{ width: `${poll.votes[id] ?? 40}%` }} /></div>
-              <small>{poll.votes[id] ?? 40}% voted</small>
-            </button>
-          );
-        })}
-      </div>
-      <div className="reaction-row">{['fire', 'clean', 'too much', 'more edge'].map(item => <button key={item}>{item}</button>)}</div>
-      <button className="primary-btn" onClick={onTry}>Try this vibe on me</button>
-    </BottomSheet>
-  );
-}
-
-function DrawerSheet({ user, onClose, setTab, setProfileView, onLogout }: {
-  user: TenantUser;
+function Modal({ title, onClose, children, className = '' }: {
+  title: string;
   onClose: () => void;
-  setTab: (tab: Tab) => void;
-  setProfileView: (view: ProfileView) => void;
-  onLogout: () => void;
+  children: React.ReactNode;
+  className?: string;
 }) {
-  const openProfileView = (view: ProfileView) => {
-    setProfileView(view);
-    setTab('profile');
-    onClose();
-  };
-
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(item => !item.hasAttribute('disabled'));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
   return (
-    <div className="drawer-scrim" data-testid="drawer-scrim" onClick={onClose}>
-      <aside className="drawer-panel" aria-label="Myuze menu" onClick={event => event.stopPropagation()}>
-        <div className="drawer-profile">
-          <Avatar name={user.name} index={0} />
-          <span>
-            <strong>{user.name}</strong>
-            <button onClick={() => openProfileView('edit')}>Edit Profile</button>
-          </span>
-        </div>
-        <nav className="drawer-nav">
-          <button data-testid="drawer-fit-preferences" onClick={() => openProfileView('fit')}>♡ <span>Fit Preferences</span><b>›</b></button>
-          <button data-testid="drawer-tryon-history" onClick={() => openProfileView('history')}>◷ <span>Try-on History</span><b>›</b></button>
-          <button data-testid="drawer-privacy" onClick={() => openProfileView('privacy')}>◇ <span>Privacy Policy</span><b>›</b></button>
-          <button data-testid="drawer-help" onClick={() => openProfileView('help')}>? <span>Help & Support</span><b>›</b></button>
-        </nav>
-        <button className="drawer-logout" data-testid="drawer-logout" onClick={onLogout}>↪ <span>Log Out</span></button>
-      </aside>
-    </div>
-  );
-}
-
-function BottomSheet({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="sheet-scrim">
-      <div className="bottom-sheet">
-        <button className="close-btn" onClick={onClose}>×</button>
-        <h2>{title}</h2>
+    <div className="modal-scrim" onMouseDown={event => event.target === event.currentTarget && onClose()}>
+      <div className={`modal-sheet ${className}`} role="dialog" aria-modal="true" aria-labelledby="modal-title" ref={dialogRef}>
+        <IconButton label={`Close ${title}`} onClick={onClose} className="modal-close"><X /></IconButton>
+        <h2 id="modal-title">{title}</h2>
         {children}
       </div>
     </div>
   );
 }
 
-function TabBar({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
-  const tabs: Array<[Tab, string, string]> = [['home', '⌂', 'Home'], ['tryon', '✦', 'Try On'], ['discover', '◇', 'Discover']];
+function Drawer({ profileName, onClose, onProfile, onHistory, logout, notify }: {
+  profileName: string;
+  onClose: () => void;
+  onProfile: () => void;
+  onHistory: () => void;
+  logout: () => void;
+  notify: (message: string) => void;
+}) {
   return (
-    <nav className="tab-bar">
-      {tabs.map(([id, icon, label]) => (
-        <button
-          className={tab === id ? 'active' : ''}
-          data-testid={`tab-${id}`}
-          onClick={() => setTab(id)}
-          key={id}
-        >
-          <span>{icon}</span>{label}
-        </button>
-      ))}
-    </nav>
+    <div className="drawer-scrim" onMouseDown={event => event.target === event.currentTarget && onClose()}>
+      <aside className="drawer-panel" role="dialog" aria-modal="true" aria-label="Myuze menu">
+        <div className="drawer-top"><img src={myuzeLogo} alt="Myuze" /><IconButton label="Close menu" onClick={onClose}><X /></IconButton></div>
+        <button className="drawer-profile" type="button" onClick={onProfile}><UserCircle weight="duotone" /><span><strong>{profileName}</strong><small>Edit style profile</small></span></button>
+        <nav aria-label="Account options">
+          <button type="button" onClick={onProfile}><Ruler /><span>Fit preferences</span></button>
+          <button type="button" onClick={onHistory}><Crosshair /><span>Try-on history</span></button>
+          <button type="button" onClick={() => notify('Privacy policy opened in preview mode.')}><ShieldCheck /><span>Privacy and data</span></button>
+          <button type="button" onClick={() => notify('Support request started.')}><PaintBrush /><span>Help and feedback</span></button>
+        </nav>
+        <button className="drawer-logout" type="button" onClick={logout}><SignOut /><span>Log out</span></button>
+      </aside>
+    </div>
   );
 }
 
-function MemoryCard({ tenant, user }: { tenant: Tenant; user: TenantUser }) {
+function NotificationItem({ title, detail }: { title: string; detail: string }) {
+  return <article className="notification-item"><span><Bell weight="fill" /></span><div><strong>{title}</strong><p>{detail}</p></div></article>;
+}
+
+function MoodboardModal({ onClose, onCreate }: { onClose: () => void; onCreate: () => void }) {
+  const [selected, setSelected] = useState(0);
   return (
-    <div className="memory-card">
-      <h3>Current memory scope</h3>
-      <dl>
-        <dt>Tenant</dt><dd>{tenant.name}</dd>
-        <dt>User</dt><dd>{user.name}</dd>
-        <dt>Profile</dt><dd>{user.profile.gender}, {user.profile.size}, {user.profile.skinTone}</dd>
-        <dt>Styles</dt><dd>{user.profile.styles.join(', ') || 'None yet'}</dd>
-        <dt>Chat history</dt><dd>{user.chat.length} messages</dd>
-        <dt>Saved looks</dt><dd>{user.savedLooks.length}</dd>
-      </dl>
-    </div>
+    <Modal title="Build from inspiration" onClose={onClose}>
+      <p className="modal-intro">Choose a source and Myuze will translate the visual language into outfits.</p>
+      <div className="source-grid">
+        {[{ icon: <ImageSquare />, title: 'Photo library', detail: 'Upload screenshots or a moodboard' }, { icon: <Camera />, title: 'Camera', detail: 'Capture an item you already own' }, { icon: <Link />, title: 'Paste a link', detail: 'Use a product or inspiration URL' }].map((source, index) => <button type="button" className={selected === index ? 'active' : ''} aria-pressed={selected === index} onClick={() => setSelected(index)} key={source.title}>{source.icon}<span><strong>{source.title}</strong><small>{source.detail}</small></span>{selected === index && <Check weight="bold" />}</button>)}
+      </div>
+      <button className="button primary full" type="button" onClick={onCreate}><Sparkle weight="fill" /> Create three looks</button>
+    </Modal>
+  );
+}
+
+function ProductModal({ look, onClose, onSave, onShop }: { look: Look; onClose: () => void; onSave: () => void; onShop: () => void }) {
+  return (
+    <Modal title="Shop the look" onClose={onClose} className="product-modal">
+      <div className="product-hero"><img src={look.image} alt={`${look.title} outfit`} /><div><span>{look.tags[0]}</span><h3>{look.title}</h3><p>{look.rationale}</p></div></div>
+      <ul className="product-list">{look.items.map((item, index) => <li key={item}><span>{index + 1}</span><div><strong>{item}</strong><small>Similar pieces from ${Math.round(look.price / look.items.length)}</small></div><Check weight="bold" /></li>)}</ul>
+      <div className="price-row"><span>Estimated total</span><strong>${look.price}</strong></div>
+      <div className="modal-actions"><button className="button secondary" type="button" onClick={onSave}><BookmarkSimple /> Save</button><button className="button primary" type="button" onClick={onShop}><ShoppingBag /> Prepare shopping list</button></div>
+    </Modal>
+  );
+}
+
+function ChallengeModal({ look, onClose, onCreate }: { look: Look; onClose: () => void; onCreate: () => void }) {
+  const [type, setType] = useState('Vote on this look');
+  return (
+    <Modal title="Create a challenge" onClose={onClose}>
+      <p className="modal-intro">Invite friends to vote without making them create an account.</p>
+      <div className="challenge-preview"><img src={look.image} alt="" /><div><span>HELP MAYA DECIDE</span><strong>{look.title}</strong><p>Would you wear it?</p></div></div>
+      <fieldset className="choice-list"><legend>Challenge format</legend>{['Vote on this look', 'Outfit battle', 'Style this item'].map(item => <label key={item}><input type="radio" name="challenge" value={item} checked={type === item} onChange={() => setType(item)} /><span>{item}</span></label>)}</fieldset>
+      <button className="button primary full" type="button" onClick={onCreate}><ShareNetwork /> Create share card</button>
+    </Modal>
+  );
+}
+
+function ShareModal({ look, onClose, notify, openReel }: { look: Look; onClose: () => void; notify: (message: string) => void; openReel: () => void }) {
+  const share = (destination: string) => notify(`${destination} share is ready. Native sharing connects with the production API.`);
+  return (
+    <Modal title="Share your look" onClose={onClose}>
+      <div className="share-preview"><img src={look.image} alt={`${look.title} share preview`} /><div><img src={myuzeLogo} alt="Myuze" /><span>STYLED FOR MAYA</span><strong>{look.title}</strong><small>Try this vibe on yourself</small></div></div>
+      <button className="reel-action" type="button" onClick={openReel}><Sparkle weight="fill" /><span><strong>Create a 9:16 story</strong><small>Animated reveal, ready for Reels or Stories</small></span></button>
+      <div className="share-grid">
+        <button type="button" onClick={() => share('Instagram')}><InstagramLogo /><span>Instagram</span></button>
+        <button type="button" onClick={() => share('Pinterest')}><PinterestLogo /><span>Pinterest</span></button>
+        <button type="button" onClick={() => share('WhatsApp')}><WhatsappLogo /><span>WhatsApp</span></button>
+        <button type="button" onClick={() => share('Facebook')}><FacebookLogo /><span>Facebook</span></button>
+      </div>
+      <button className="copy-link" type="button" onClick={async () => { await navigator.clipboard?.writeText(`https://myuze.app/look/${look.id}`); notify('Share link copied.'); }}><Link /><span>myuze.app/look/{look.id}</span><Copy /></button>
+    </Modal>
+  );
+}
+
+function ReelModal({ look, onClose, onSave }: { look: Look; onClose: () => void; onSave: () => void }) {
+  const [style, setStyle] = useState('Editorial');
+  return (
+    <Modal title="Story preview" onClose={onClose} className="reel-modal">
+      <div className="story-preview"><img src={look.image} alt="Animated story preview" /><div><img src={myuzeLogo} alt="Myuze" /><span>YOUR GALLERY OPENING LOOK</span><strong>{look.title}</strong><small>Styled with Myuze</small></div></div>
+      <div className="segment-control">{['Editorial', 'Clean', 'Playful'].map(item => <button type="button" className={style === item ? 'active' : ''} onClick={() => setStyle(item)} key={item}>{item}</button>)}</div>
+      <button className="button primary full" type="button" onClick={onSave}>Save story</button>
+    </Modal>
+  );
+}
+
+function UploadModal({ onClose, onContinue }: { onClose: () => void; onContinue: () => void }) {
+  const [source, setSource] = useState<'photo' | 'camera'>('photo');
+  return (
+    <Modal title="Try a new look" onClose={onClose}>
+      <p className="modal-intro">Add a garment, screenshot, or full outfit. The production API will replace this preview step.</p>
+      <button className="upload-zone" type="button" onClick={() => setSource('photo')}><ImageSquare /><strong>{source === 'photo' ? 'Reference selected' : 'Choose from photos'}</strong><span>PNG, JPG, or HEIC</span></button>
+      <div className="modal-actions"><button className={source === 'camera' ? 'button secondary active' : 'button secondary'} type="button" onClick={() => setSource('camera')}><Camera /> Use camera</button><button className="button primary" type="button" onClick={onContinue}><Sparkle weight="fill" /> Generate preview</button></div>
+    </Modal>
+  );
+}
+
+function ProfileModal({ profile, savedCount, onClose, onSave }: {
+  profile: typeof initialState.profile;
+  savedCount: number;
+  onClose: () => void;
+  onSave: (profile: typeof initialState.profile) => void;
+}) {
+  const [draft, setDraft] = useState(profile);
+  return (
+    <Modal title="Style profile" onClose={onClose}>
+      <div className="profile-stats"><div><strong>{savedCount}</strong><span>Saved looks</span></div><div><strong>{draft.styles.length}</strong><span>Style signals</span></div></div>
+      <div className="profile-form">
+        <label>Name<input value={draft.fullName} onChange={event => setDraft({ ...draft, fullName: event.target.value })} /></label>
+        <div className="field-pair"><label>Profile<select value={draft.gender} onChange={event => setDraft({ ...draft, gender: event.target.value as 'Female' | 'Male' })}><option>Female</option><option>Male</option></select></label><label>Size<select value={draft.size} onChange={event => setDraft({ ...draft, size: event.target.value })}>{['XS', 'S', 'M', 'L', 'XL'].map(size => <option key={size}>{size}</option>)}</select></label></div>
+        <fieldset><legend>Style signals</legend><div className="style-choice-grid compact">{styleOptions.map(style => { const active = draft.styles.includes(style); return <button type="button" className={active ? 'style-choice active' : 'style-choice'} aria-pressed={active} onClick={() => setDraft({ ...draft, styles: active ? draft.styles.filter(item => item !== style) : [...draft.styles, style] })} key={style}>{active && <Check />} {style}</button>; })}</div></fieldset>
+      </div>
+      <button className="button primary full" type="button" onClick={() => onSave(draft)}>Save profile</button>
+    </Modal>
   );
 }
 
 function Toast({ message }: { message: string }) {
-  return <div className="toast">{message}</div>;
-}
-
-function FashionHero({ look }: { look: Look }) {
-  return (
-    <div className={`fashion-hero ${look.image}`}>
-      <img src={look.photo} alt="" />
-      <div className="hero-caption"><strong>{look.title}</strong><span>{look.vibe}</span></div>
-    </div>
-  );
-}
-
-function FashionTile({ variant }: { variant: string }) {
-  const normalized = variant.toLowerCase().replace(/\s+/g, '-');
-  const indexByVariant: Record<string, number> = {
-    'female-minimal': 0,
-    'female-casual': 1,
-    'female-office': 4,
-    'female-vintage': 5,
-    'female-athleisure': 3,
-    'female-bohemian': 2,
-    'male-streetwear': 6,
-    'male-casual': 8,
-    'male-workwear': 7,
-    'male-business-casual': 9,
-    'male-classic': 10,
-    'male-minimal': 11,
-    street: 6,
-    streetwear: 6,
-    weekend: 0,
-    casual: 1,
-    'clean-weekend': 1,
-    rooftop: 8,
-    'rooftop-casual': 8,
-    work: 3,
-    office: 4,
-    'business-casual': 9,
-    minimal: 2,
-    'soft-minimal': 2,
-    vintage: 5,
-    bohemian: 5,
-    athleisure: 10,
-    y2k: 11,
-    sage: 7,
-  };
-  const preferencePhoto = styleThumbnails[normalized];
-  const photo = preferencePhoto ?? modelPhotos[indexByVariant[normalized] ?? 0];
-  return (
-    <div className={`fashion-tile ${preferencePhoto ? 'preference-tile' : normalized}`}>
-      <img src={photo} alt="" />
-    </div>
-  );
-}
-
-function FashionFigure({ mini = false }: { mini?: boolean }) {
-  return (
-    <div className={mini ? 'figure mini' : 'figure'}>
-      <span className="head" />
-      <span className="body" />
-      <span className="leg left" />
-      <span className="leg right" />
-    </div>
-  );
-}
-
-function Avatar({ name, index = 0 }: { name: string; index?: number }) {
-  return <span className="avatar"><img src={modelPhotos[index % modelPhotos.length]} alt="" /><b>{name.slice(0, 1).toUpperCase()}</b></span>;
+  return <div className={message ? 'toast visible' : 'toast'} role="status" aria-live="polite">{message}</div>;
 }
 
 export default App;
