@@ -42,8 +42,8 @@ import myuzeLogo from './assets/myuze-assets/myuze-logo-full.svg';
 import googleLogo from './assets/myuze-assets/google-g.svg';
 import dinnerWithFriends from './assets/myuze-assets/homepage/dinner-with-friends.webp';
 import brunchDate from './assets/myuze-assets/homepage/brunch-date.webp';
-import weekendGetaway from './assets/myuze-assets/homepage/weekend-getaway.webp';
-import workPresentation from './assets/myuze-assets/homepage/work-presentation.webp';
+import weekendGetaway from './assets/myuze-assets/homepage/weekend-getaway-v2.webp';
+import workPresentation from './assets/myuze-assets/homepage/work-presentation-v2.webp';
 import { initialState, looks, styleOptions } from './prototype/data';
 import type { AuthView, Look, ModalId, TabId } from './prototype/types';
 import { usePrototypeStore } from './prototype/usePrototypeStore';
@@ -334,10 +334,10 @@ function AuthScreen({ view, setView, onComplete, notify }: {
   const [activeSlide, setActiveSlide] = useState(0);
 
   const slides = [
-    { image: dinnerWithFriends, title: 'Dinner with friends', detail: 'Smart casual', alt: 'Woman in a beige blazer and jeans walking through the city' },
-    { image: brunchDate, title: 'Brunch date', detail: 'Relaxed and chic', alt: 'Woman in an ivory outfit on stone steps' },
-    { image: weekendGetaway, title: 'Weekend getaway', detail: 'Laid-back layers', alt: 'Man in a navy blazer and neutral trousers' },
-    { image: workPresentation, title: 'Work presentation', detail: 'Polished and confident', alt: 'Woman in a tailored neutral office look' },
+    { image: dinnerWithFriends, title: 'Dinner with friends', detail: 'Smart casual', alt: 'Woman in a beige blazer and jeans walking through the city', mobilePosition: '35% 34%', mobileShift: '0%' },
+    { image: brunchDate, title: 'Brunch date', detail: 'Relaxed and chic', alt: 'Woman in an ivory outfit on stone steps', mobilePosition: '48% 34%', mobileShift: '0%' },
+    { image: weekendGetaway, title: 'Weekend getaway', detail: 'Laid-back layers', alt: 'Man in a navy blazer and neutral trousers', mobilePosition: '54% 32%', mobileShift: '0%' },
+    { image: workPresentation, title: 'Work presentation', detail: 'Polished and confident', alt: 'Woman in a tailored neutral office look', mobilePosition: '56% 30%', mobileShift: '0%' },
   ];
 
   const continueWithEmail = (event: React.FormEvent) => {
@@ -362,31 +362,41 @@ function AuthScreen({ view, setView, onComplete, notify }: {
         <main className="public-hero">
           <section className="public-copy" aria-labelledby="public-title">
             <span className="eyebrow">AI PERSONAL STYLIST</span>
-            <h1 id="public-title">Find the look that feels like you.</h1>
-            <p>Myuze styles complete outfits for your real plans—so getting dressed feels effortless.</p>
-            <form className="public-auth-form" onSubmit={continueWithEmail} noValidate>
-              <button className="google-button" type="button" onClick={() => {
-                notify('Google sign-in is running in preview mode.');
-                onComplete();
-              }}><img src={googleLogo} alt="" /> Continue with Google</button>
-              <div className="auth-divider"><span>OR</span></div>
-              <label htmlFor="homepage-email">Email</label>
-              <input id="homepage-email" type="email" autoComplete="email" placeholder="Enter your email" value={email} onChange={event => setEmail(event.target.value)} />
-              <button className="button primary full" type="submit">Continue with email</button>
-            </form>
-            <p className="member-prompt">Already a member? <button type="button" onClick={() => setView('signin')}>Sign in</button></p>
-            <p className="free-note"><ShieldCheck weight="bold" /> Free to start. No credit card required.</p>
+            <h1 id="public-title">
+              <span className="desktop-hero-copy">Find the look that feels like you.</span>
+              <span className="mobile-hero-copy">Feel like yourself. Dress for what’s next.</span>
+            </h1>
+            <p>
+              <span className="desktop-hero-copy">Myuze styles complete outfits for your real plans—so getting dressed feels effortless.</span>
+              <span className="mobile-hero-copy">Personalized outfits for every plan, mood, and moment.</span>
+            </p>
+            <div className="public-auth-sheet">
+              <form className="public-auth-form" onSubmit={continueWithEmail} noValidate>
+                <button className="google-button" type="button" onClick={() => {
+                  notify('Google sign-in is running in preview mode.');
+                  onComplete();
+                }}><img src={googleLogo} alt="" /> Continue with Google</button>
+                <div className="auth-divider"><span>OR</span></div>
+                <label htmlFor="homepage-email">Email</label>
+                <input id="homepage-email" type="email" autoComplete="email" placeholder="Enter your email" value={email} onChange={event => setEmail(event.target.value)} />
+                <button className="button primary full" type="submit">Continue with email</button>
+              </form>
+              <div className="public-support">
+                <p className="member-prompt">Already a member? <button type="button" onClick={() => setView('signin')}>Sign in</button></p>
+                <p className="free-note"><ShieldCheck weight="bold" /> Free to start. No credit card required.</p>
+              </div>
+            </div>
           </section>
 
           <section className="style-stories" id="style-stories" aria-label="Style inspiration slideshow">
-            <article className="active-story">
+            <article className="active-story" style={{ '--mobile-position': slides[activeSlide].mobilePosition, '--mobile-shift': slides[activeSlide].mobileShift } as React.CSSProperties}>
               <img src={slides[activeSlide].image} alt={slides[activeSlide].alt} />
               <span className="styled-label"><Sparkle weight="fill" /> Styled by Myuze</span>
               <div className="story-caption"><strong>{slides[activeSlide].title}</strong><span>{slides[activeSlide].detail}</span></div>
-              <button className="story-arrow previous" type="button" aria-label="Previous style story" onClick={() => setActiveSlide(current => (current + slides.length - 1) % slides.length)}><CaretLeft weight="bold" /></button>
-              <button className="story-arrow next" type="button" aria-label="Next style story" onClick={() => setActiveSlide(current => (current + 1) % slides.length)}><CaretRight weight="bold" /></button>
-              <div className="story-dots" aria-label={`Slide ${activeSlide + 1} of ${slides.length}`}>
-                {slides.map((slide, index) => <button key={slide.title} type="button" aria-label={`Show ${slide.title}`} aria-pressed={index === activeSlide} onClick={() => setActiveSlide(index)} />)}
+              <div className="story-navigation" aria-label="Style story controls">
+                <button type="button" aria-label="Previous style story" onClick={() => setActiveSlide(current => (current + slides.length - 1) % slides.length)}><CaretLeft weight="bold" /></button>
+                <span aria-live="polite">{String(activeSlide + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}</span>
+                <button type="button" aria-label="Next style story" onClick={() => setActiveSlide(current => (current + 1) % slides.length)}><CaretRight weight="bold" /></button>
               </div>
             </article>
             <div className="story-rail">
@@ -402,11 +412,11 @@ function AuthScreen({ view, setView, onComplete, notify }: {
         </main>
 
         <section className="how-it-works" id="how-it-works" aria-labelledby="how-title">
-          <h2 id="how-title">From occasion to outfit in seconds</h2>
+          <h2 id="how-title">Style every plan in seconds</h2>
           <div>
-            <article><span>1</span><strong>Tell us your plan</strong><p>Share the occasion, location, and mood.</p></article>
-            <article><span>2</span><strong>Get your look</strong><p>Myuze builds complete outfits around you.</p></article>
-            <article><span>3</span><strong>Save and wear</strong><p>Keep favorites and get dressed with confidence.</p></article>
+            <article><span>1</span><strong>Share the moment</strong><p>Tell Myuze where you are going and the mood you want.</p></article>
+            <article><span>2</span><strong>See complete looks</strong><p>Get styled outfits with pieces that work together.</p></article>
+            <article><span>3</span><strong>Save what feels right</strong><p>Keep favorites ready for the days you want less guessing.</p></article>
           </div>
         </section>
       </div>
